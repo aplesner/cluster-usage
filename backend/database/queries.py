@@ -601,3 +601,45 @@ def get_top_users_recent_logs(db_path, log_count=5, user_count=10):
         'date_range': date_range
     }
 
+
+def get_historic_usage(db_path: str, top_n: int = 10):
+    """Get historic usage data with top N users for each log entry"""
+    conn = get_db_connection(db_path)
+    cursor = conn.cursor()
+    
+    # Get all log entries ordered by timestamp (descending order)
+    cursor.execute("SELECT log_id, timestamp FROM LogEntries ORDER BY timestamp DESC")
+    log_entries = [dict(row) for row in cursor.fetchall()]
+    
+    # For each log entry, get the top N users by IO operations
+    for log_entry in log_entries:
+        query = """
+        SELECT 
+            u.username,
+            u.user_role,
+            u.user_affiliation,
+            SUM(io.operation_count) as total_operations,
+            COUNT(DISTINCT m.machine_id) as machine_count,
+            GROUP_CONCAT(DISTINCT m.machine_name) as machines
+        FROM 
+            IOOperations io
+        JOIN 
+            UserSessions us ON io.session_id = us.session_id
+        JOIN 
+            Users u ON us.user_id = u.user_id
+        JOIN 
+            Machines m ON us.machine_id = m.machine_id
+        WHERE 
+            us.log_id = ?
+        GROUP BY 
+            u.user_id
+        ORDER BY 
+            total_operations DESC
+        LIMIT ?
+        """
+        
+        cursor.execute(query, (log_entry['log_id'], top_n))
+        log_entry['top_users'] = [dict(row) for row in cursor.fetchall()]
+    
+    conn.close()
+    return log_entries

@@ -259,3 +259,49 @@ a:hover {
   cursor: not-allowed;
 }
 
+/* Historic Usage styles */
+.log-entries-list {
+  margin-top: 20px;
+}
+
+.log-entry-card {
+  margin-bottom: 15px;
+}
+
+.log-entry-header {
+  cursor: pointer;
+}
+
+.log-entry-header h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+}
+
+.expand-icon {
+  font-size: 0.8em;
+  margin-left: 10px;
+}
+
+.top-n-selector {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.top-n-selector label {
+  margin-right: 10px;
+  font-weight: 500;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.text-center {
+  text-align: center;
+}

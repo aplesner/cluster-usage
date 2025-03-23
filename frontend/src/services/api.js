@@ -81,7 +81,15 @@ export const getUserTimeStats = (username) => fetchData(`/usage/user/${username}
 export const getTopUsersRecent = (logCount = 5, userCount = 10) => 
   fetchData(`/top-users/recent?logs=${logCount}&users=${userCount}`);
 
-// Export the API functions as an object
+/**
+ * Get historic usage data with top N users for each log entry
+ * @param {number} topN - Number of top users to return per log entry
+ * @returns {Promise} - Promise with the historic usage data
+ */
+export const getHistoricUsage = (topN = 10) => 
+  fetchData(`/usage/historic?top_n=${topN}`);
+
+// Update the API object to include the new function
 const api = {
   getUsers,
   getStats,
@@ -91,8 +99,10 @@ const api = {
   getTimeUsage,
   getSizeDistribution,
   getUserTimeStats,
-  getTopUsersRecent
+  getTopUsersRecent,
+  getHistoricUsage
 };
+
 
 export default api;
 

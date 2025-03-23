@@ -224,7 +224,7 @@ def process_log_file(conn, log_path, archive_dir=None):
             # Move the file to the archive directory using rsync
             archive_path: str = os.path.join(archive_dir, log_filename)
             # Add datetime to the filename to avoid overwriting
-            archive_path = f"{archive_path.removesuffix(".log")}_{datetime.now().strftime('%Y-%m-%d.log')}"
+            archive_path = archive_path.replace(".log", f"_{datetime.now().strftime('%Y-%m-%d.log')}")
             shutil.move(log_path, archive_path)
             print(f"Archived {log_filename} to {archive_dir}")
         

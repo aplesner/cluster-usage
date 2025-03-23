@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from backend.database.queries import (
     get_database_stats, get_all_users, get_all_machines,
     get_user_usage, get_machine_usage, get_time_usage, get_size_distribution,
-    get_time_stats_for_user, get_top_users_recent_logs
+    get_time_stats_for_user, get_top_users_recent_logs, get_historic_usage
 )
 
 api = Blueprint('api', __name__, url_prefix='/api')
@@ -85,3 +85,12 @@ def top_users_recent():
     user_count = request.args.get('users', default=10, type=int)
     users_data = get_top_users_recent_logs(db_path, log_count, user_count)
     return jsonify(users_data)
+
+@api.route('/usage/historic', methods=['GET'])
+def historic_usage():
+    """Get historic usage data with top N users for each log entry"""
+    db_path = current_app.config['DB_PATH']
+    top_n = request.args.get('top_n', default=10, type=int)
+    historic_data = get_historic_usage(db_path, top_n)
+    return jsonify(historic_data)
+

@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import UserList from './components/users/UserList';
 import UserDetail from './components/users/UserDetail';
 import DashboardHome from './components/dashboard/DashboardHome';
+import HistoricUsage from './components/historic/HistoricUsage';
 import './App.css';
 
 function App() {
@@ -23,6 +24,9 @@ function App() {
                 <Link to="/machines" className="nav-link">Machines</Link>
               </li>
               <li className="nav-item">
+                <Link to="/historic" className="nav-link">Historic Usage</Link>
+              </li>
+              <li className="nav-item">
                 <Link to="/time" className="nav-link">Time Analysis</Link>
               </li>
               <li className="nav-item">
@@ -35,11 +39,12 @@ function App() {
       
       <main className="main">
         <div className="container">
-	  <Routes>
+          <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/users" element={<UserList />} />
             <Route path="/users/:username" element={<UserDetail />} />
             <Route path="/machines" element={<div>Machines Page (Coming Soon)</div>} />
+            <Route path="/historic" element={<HistoricUsage />} />
             <Route path="/time" element={<div>Time Analysis (Coming Soon)</div>} />
             <Route path="/sizes" element={<div>Size Distribution (Coming Soon)</div>} />
             <Route path="*" element={<div>Page Not Found</div>} />
@@ -57,4 +62,3 @@ function App() {
 }
 
 export default App;
-
