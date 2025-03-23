@@ -41,8 +41,8 @@ Future: We will also include compute resource usage.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/io-usage-dashboard.git
-cd io-usage-dashboard
+git clone https://github.com/aplesner/Cluster-usage
+cd Cluster-usage
 ```
 
 2. Set up the backend:
@@ -87,12 +87,12 @@ cd frontend
 npm start
 ```
 
-3. Access the application at http://localhost:3000
+3. Access the application at http://localhost
 
 #### Production Mode (with Docker)
 
 ```bash
-docker-compose -f docker/docker-compose.yml up
+./scripts/docker-run.sh start
 ```
 
 ## Log Processing
@@ -106,7 +106,7 @@ python backend/app.py process_logs /path/to/io_usage.log
 Or use the script:
 
 ```bash
-./scripts/import_logs.sh /path/to/io_usage.log
+./scripts/import_logs.sh
 ```
 
 ## API Endpoints
