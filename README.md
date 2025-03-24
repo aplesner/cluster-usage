@@ -41,7 +41,7 @@ Future: We will also include compute resource usage.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/aplesner/Cluster-usage
+git clone https://github.com/aplesner/cluster-usage
 cd Cluster-usage
 ```
 
