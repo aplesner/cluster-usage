@@ -43,19 +43,18 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 
 # Database files
-*.db
+# *.db
 *.sqlite
 *.sqlite3
 
 # Log files
 *.log
-data/logs/*
 !data/logs/.gitkeep
 !data/logs/incoming/.gitkeep
 !data/logs/archive/.gitkeep
 
 # Data directories
-data/db/*
+# data/db/*
 !data/db/.gitkeep
 data/backups/*
 !data/backups/.gitkeep
