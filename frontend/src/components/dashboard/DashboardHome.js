@@ -4,6 +4,7 @@ import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import TopUsersRecent from './TopUsersRecent';
+import SimpleIOChart from './SimpleIOChart';
 
 const DashboardHome = () => {
   const [stats, setStats] = useState(null);
@@ -74,6 +75,9 @@ const DashboardHome = () => {
           <Link to="/sizes" className="btn">Size Distribution</Link>
         </div>
       </div>
+      
+      {/* IO Usage Chart */}
+      <SimpleIOChart />
       
       <div className="card">
         <div className="card-header">

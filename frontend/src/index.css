@@ -305,3 +305,52 @@ a:hover {
 .text-center {
   text-align: center;
 }
+
+/* User profile image styles */
+.user-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.user-profile-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  object-fit: cover;
+  border: 2px solid var(--medium-gray);
+}
+
+/* Chart styles */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  margin-bottom: 1rem;
+}
+
+.chart-help {
+  color: var(--dark-gray);
+  text-align: center;
+  margin-top: 5px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Make sure charts are responsive */
+@media (max-width: 768px) {
+  .chart-container {
+    height: 300px;
+  }
+}
+

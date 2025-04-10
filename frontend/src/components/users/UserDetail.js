@@ -143,6 +143,15 @@ const UserDetail = () => {
           <h3>User Information</h3>
         </div>
         <div className="card-body">
+          {userData.image_url && (
+            <div className="user-image-container">
+              <img 
+                src={userData.image_url} 
+                alt={userData.full_name || userData.username} 
+                className="user-profile-image"
+              />
+            </div>
+          )}
           <div className="table-container">
             <table className="table">
               <tbody>
@@ -150,6 +159,12 @@ const UserDetail = () => {
                   <th>Username</th>
                   <td>{userData.username}</td>
                 </tr>
+                {userData.full_name && (
+                  <tr>
+                    <th>Name</th>
+                    <td>{userData.full_name}</td>
+                  </tr>
+                )}
                 <tr>
                   <th>Role</th>
                   <td>
@@ -160,6 +175,12 @@ const UserDetail = () => {
                     )}
                   </td>
                 </tr>
+                {userData.title && (
+                  <tr>
+                    <th>Position</th>
+                    <td>{userData.title}</td>
+                  </tr>
+                )}
                 <tr>
                   <th>Affiliation</th>
                   <td>{userData.user_affiliation || '-'}</td>

@@ -108,6 +108,7 @@ def get_all_machines(db_path: str):
     conn.close()
     return machines
 
+
 def get_user_usage(db_path: str, username: str=None, user_id=None):
     """Get detailed usage statistics for a specific user"""
     conn = get_db_connection(db_path)
@@ -123,13 +124,17 @@ def get_user_usage(db_path: str, username: str=None, user_id=None):
         conn.close()
         return None
     
-    # Get user details
+    # Get user details - include title and image_url fields
     query = f"""
     SELECT 
         u.user_id, 
         u.username, 
         u.user_role, 
-        u.user_affiliation
+        u.user_affiliation,
+        u.full_name,
+        u.title,
+        u.image_url,
+        u.is_alumni
     FROM 
         Users u
     {where_clause}
@@ -141,6 +146,8 @@ def get_user_usage(db_path: str, username: str=None, user_id=None):
     if not user:
         conn.close()
         return None
+    
+    # Rest of the function remains the same...
     
     # Get user's machines
     query = f"""
@@ -213,6 +220,7 @@ def get_user_usage(db_path: str, username: str=None, user_id=None):
     
     conn.close()
     return user
+
 
 def get_machine_usage(db_path: str, machine_name: str=None, machine_id=None):
     """Get detailed usage statistics for a specific machine"""
