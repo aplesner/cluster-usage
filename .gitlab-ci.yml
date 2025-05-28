@@ -143,6 +143,24 @@ test-ssh:
   image: alpine:latest
   before_script:
     - apk add --no-cache openssh-client
+    - echo "Debug - VM_USER is set to: '$VM_USER'"
+    - echo "Debug - VM_HOST is set to: '$VM_HOST'"
+    - echo "Debug - SSH_PRIVATE_KEY length: ${#SSH_PRIVATE_KEY}"
+    - |
+      if [ -z "$VM_USER" ]; then
+        echo "ERROR: VM_USER is not set!"
+        exit 1
+      fi
+    - |
+      if [ -z "$VM_HOST" ]; then
+        echo "ERROR: VM_HOST is not set!"
+        exit 1
+      fi
+    - |
+      if [ -z "$SSH_PRIVATE_KEY" ]; then
+        echo "ERROR: SSH_PRIVATE_KEY is not set!"
+        exit 1
+      fi
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key
     - chmod 600 /tmp/ssh_key
@@ -156,6 +174,71 @@ test-ssh:
     - ssh -o StrictHostKeyChecking=no $VM_USER@$VM_HOST "echo 'SSH connection successful'; whoami; pwd"
   when: manual
   allow_failure: true
+
+# Deploy to university VM (build on VM to avoid Docker issues)
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client git curl
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key
+    - chmod 600 /tmp/ssh_key
+    - ssh-add /tmp/ssh_key
+    - rm /tmp/ssh_key
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $VM_HOST >> ~/.ssh/known_hosts
+  script:
+    - echo "Starting deployment to $VM_USER@$VM_HOST"
+    - |
+      ssh -o StrictHostKeyChecking=no $VM_USER@$VM_HOST << 'EOF'
+        set -e
+        echo "=== Deployment started ===" 
+        cd /var/www/cluster-usage-dashboard
+        
+        echo "=== Checking Docker status ===" 
+        if ! docker info > /dev/null 2>&1; then
+            echo "Starting Docker service..."
+            sudo systemctl start docker
+            sleep 5
+        fi
+        echo "✅ Docker is running"
+        
+        echo "=== Pulling latest code ===" 
+        git fetch origin main
+        git reset --hard origin/main
+        
+        echo "=== Stopping containers ===" 
+        docker-compose -f docker-compose.prod.yml down || true
+        
+        echo "=== Building and starting ===" 
+        docker-compose -f docker-compose.prod.yml up --build -d
+        
+        echo "=== Waiting for startup ===" 
+        sleep 15
+        
+        echo "=== Testing services ===" 
+        if curl -f -m 10 http://localhost:5000/api/stats > /dev/null 2>&1; then
+          echo "✅ Backend OK"
+        else
+          echo "❌ Backend failed"
+          docker-compose -f docker-compose.prod.yml logs backend --tail=10
+        fi
+        
+        if curl -f -m 10 http://localhost/ > /dev/null 2>&1; then
+          echo "✅ Frontend OK"
+        else
+          echo "❌ Frontend failed"
+        fi
+        
+        echo "=== Final status ===" 
+        docker-compose -f docker-compose.prod.yml ps
+        echo "=== Deployment completed ===" 
+      EOF
+  only:
+    - main
+  needs: ["test-backend", "test-frontend"]
 
 # Deploy to university VM
 deploy:
