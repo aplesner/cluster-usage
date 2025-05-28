@@ -150,18 +150,25 @@ main() {
         log "ERROR: Do not run this script as root"
         exit 1
     fi
+
+    echo "Running deployment script as user: $USER"
     
     # Check if Docker is installed
     if ! command -v docker &> /dev/null; then
         log "ERROR: Docker is not installed"
         exit 1
     fi
+
+    echo "Docker version: $(docker --version)"
     
     # Check if docker-compose is installed
     if ! command -v docker-compose &> /dev/null; then
         log "ERROR: docker-compose is not installed"
         exit 1
     fi
+
+    echo "docker-compose version: $(docker-compose --version)"
+    log "Starting deployment process..."
     
     backup_data
     setup_project
