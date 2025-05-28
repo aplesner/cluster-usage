@@ -3,7 +3,7 @@
 eval "$(ssh-agent -s)"
 ssh-add /local/home/aplesner/.ssh/id_rsa
 
-cd /local/home/aplesner/cluster-usage
+cd /var/www/cluster-usage-dashboard
 
 ./scripts/fetch_logs.sh
 ./scripts/import_logs.sh
