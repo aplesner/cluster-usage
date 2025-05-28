@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
@@ -10,16 +10,8 @@ const HistoricUsage = () => {
   const [topN, setTopN] = useState(10);
   const [expandedLogs, setExpandedLogs] = useState({});
 
-  useEffect(() => {
-    fetchHistoricData();
-  }, [topN]);
-  
-  // Sort historic data by timestamp (most recent first)
-  const sortedHistoricData = [...historicData].sort((a, b) => {
-    return new Date(b.timestamp) - new Date(a.timestamp);
-  });
-
-  const fetchHistoricData = async () => {
+  // Use useCallback to memoize the function and fix the dependency warning
+  const fetchHistoricData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api.getHistoricUsage(topN);
@@ -30,7 +22,16 @@ const HistoricUsage = () => {
       setError(error.message || 'Failed to fetch historic usage data');
       setLoading(false);
     }
-  };
+  }, [topN]); // Include topN as dependency since it's used in the function
+
+  useEffect(() => {
+    fetchHistoricData();
+  }, [fetchHistoricData]); // Now fetchHistoricData is properly memoized
+  
+  // Sort historic data by timestamp (most recent first)
+  const sortedHistoricData = [...historicData].sort((a, b) => {
+    return new Date(b.timestamp) - new Date(a.timestamp);
+  });
 
   // Format date for display
   const formatDate = (dateString) => {
