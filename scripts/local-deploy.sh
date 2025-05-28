@@ -47,8 +47,15 @@ fi
 # Push current changes to git first
 log "Pushing current changes to GitLab..."
 git add .
-git commit -m "Local deployment test - $(date)" || warn "Nothing to commit"
-git push origin main
+# If there are changes, commit them
+if ! git diff-index --quiet HEAD --; then
+    log "Changes detected, committing..."
+    git commit -m "Local deployment test - $(date)"
+    git push origin main
+    log "Changes pushed to GitLab"
+else
+    warn "No changes to commit"
+fi
 
 # Deploy to VM
 log "Starting deployment to $VM_HOST..."
