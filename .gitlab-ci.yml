@@ -145,7 +145,6 @@ test-ssh:
     - apk add --no-cache openssh-client
     - echo "Debug - VM_USER is set to: '$VM_USER'"
     - echo "Debug - VM_HOST is set to: '$VM_HOST'"
-    - echo "Debug - SSH_PRIVATE_KEY length: ${#SSH_PRIVATE_KEY}"
     - |
       if [ -z "$VM_USER" ]; then
         echo "ERROR: VM_USER is not set!"
