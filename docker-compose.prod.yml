@@ -23,6 +23,4 @@ services:
       - "80:80"
     depends_on:
       - backend
-    environment:
-      - REACT_APP_API_URL=http://ee-tik-vm057.ethz.ch:5000/api
     restart: unless-stopped
