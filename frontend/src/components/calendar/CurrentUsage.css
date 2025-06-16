@@ -1,0 +1,135 @@
+.current-usage {
+    margin-bottom: 2rem;
+}
+
+.current-usage .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.current-usage .last-updated {
+    font-size: 0.9em;
+    color: var(--medium-gray);
+}
+
+.current-usage .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    background-color: white;
+}
+
+.current-usage .table th,
+.current-usage .table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.current-usage .table th {
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: white;
+}
+
+.current-usage .table tr {
+    background-color: white;
+}
+
+.current-usage .btn-sm {
+    padding: 4px 8px;
+    font-size: 0.9em;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.current-usage .btn-sm:hover {
+    background-color: var(--primary-color-dark);
+}
+
+/* Highlight high resource usage */
+.current-usage .table tr td:nth-child(4) { /* Memory column */
+    font-weight: 500;
+}
+
+.current-usage .table tr td:nth-child(5) { /* GPU column */
+    font-weight: 700;
+}
+
+/* Add warning colors for high usage */
+.current-usage .table tr td:nth-child(4):not(:empty):not(:first-child) {
+    color: var(--warning-color);
+}
+
+.current-usage .table tr td:nth-child(5):not(:empty):not(:first-child) {
+    color: var(--danger-color);
+}
+
+/* Hosts list styling */
+.current-usage .hosts-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.current-usage .host-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    margin: 2px;
+    color: white;
+    background-color: #6c757d;  /* Default gray */
+}
+
+/* Host tag color variations */
+.current-usage .host-tag-green {
+    background-color: #28a745;  /* Bootstrap success green */
+    color: white;
+}
+
+.current-usage .host-tag-blue {
+    background-color: #007bff;  /* Bootstrap primary blue */
+    color: white;
+}
+
+.current-usage .host-tag-red {
+    background-color: #dc3545;  /* Bootstrap danger red */
+    color: white;
+}
+
+/* Role badge styling */
+.current-usage .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.current-usage .badge-staff {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.current-usage .badge-guest {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.current-usage .badge-stud {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.current-usage .badge-ueb {
+    background-color: var(--secondary-color);
+    color: white;
+} 

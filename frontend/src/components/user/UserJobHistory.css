@@ -1,0 +1,168 @@
+.user-job-history {
+    width: 100%;
+}
+
+.job-history-controls {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background-color: var(--hover-background);
+}
+
+.filter-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.jobs-table-container {
+    overflow-x: auto;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.jobs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.jobs-table th,
+.jobs-table td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.jobs-table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--light-background);
+    font-weight: 500;
+    color: var(--medium-gray);
+    z-index: 1;
+}
+
+.jobs-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.jobs-table th.sortable:hover {
+    background-color: var(--hover-background);
+}
+
+.jobs-table tr:hover {
+    background-color: var(--hover-background);
+}
+
+.job-resources {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.resource-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.resource-label {
+    color: var(--medium-gray);
+    font-size: 0.9em;
+}
+
+.resource-value {
+    font-family: monospace;
+    font-weight: 500;
+}
+
+.job-state {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius);
+    font-size: 0.85em;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.job-state-completed {
+    background-color: var(--success-background);
+    color: var(--success-color);
+}
+
+.job-state-running {
+    background-color: var(--info-background);
+    color: var(--info-color);
+}
+
+.job-state-failed {
+    background-color: var(--danger-background);
+    color: var(--danger-color);
+}
+
+.job-state-cancelled {
+    background-color: var(--medium-background);
+    color: var(--medium-gray);
+}
+
+.job-command {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.no-data {
+    text-align: center;
+    padding: 1rem;
+    color: var(--medium-gray);
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .job-history-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-controls {
+        justify-content: center;
+    }
+
+    .job-resources {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .jobs-table th,
+    .jobs-table td {
+        padding: 0.5rem 0.25rem;
+    }
+} 

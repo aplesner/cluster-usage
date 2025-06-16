@@ -115,6 +115,20 @@ const api = {
       throw new Error('Failed to fetch active calendar events');
     }
     return response.json();
+  },
+  async getCurrentUsage() {
+    const response = await fetch('/api/calendar/current-usage');
+    if (!response.ok) {
+      throw new Error('Failed to fetch current usage data');
+    }
+    return response.json();
+  },
+  async getUserOverview(username) {
+    const response = await fetch(`${API_URL}/users/${username}/overview`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch user overview data');
+    }
+    return response.json();
   }
 };
 

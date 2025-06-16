@@ -27,6 +27,11 @@ def initialize_database(db_path: str):
         username TEXT NOT NULL,
         user_role TEXT,
         user_affiliation TEXT,
+        full_name TEXT,
+        title TEXT,
+        image_url TEXT,
+        is_alumni INTEGER DEFAULT 0,
+        last_updated DATETIME,
         UNIQUE(username)
     )
     ''')
@@ -72,6 +77,24 @@ def initialize_database(db_path: str):
         FOREIGN KEY (session_id) REFERENCES UserSessions (session_id),
         FOREIGN KEY (range_id) REFERENCES IOSizeRanges (range_id),
         UNIQUE(session_id, range_id)
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Jobs (
+        job_id INTEGER PRIMARY KEY,
+        log_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        machine_id INTEGER NOT NULL,
+        cpus INTEGER NOT NULL,
+        memory INTEGER NOT NULL,
+        gpus INTEGER NOT NULL,
+        runtime TEXT NOT NULL,
+        state TEXT NOT NULL,
+        command TEXT NOT NULL,
+        FOREIGN KEY (log_id) REFERENCES LogEntries (log_id),
+        FOREIGN KEY (user_id) REFERENCES Users (user_id),
+        FOREIGN KEY (machine_id) REFERENCES Machines (machine_id)
     )
     ''')
     

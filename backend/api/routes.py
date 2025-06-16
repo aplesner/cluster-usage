@@ -15,6 +15,12 @@ from backend.database.queries import (
 from backend.tasks.periodic_tasks import get_task_logs
 from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
 from backend.database.schema import get_db_connection
+from backend.parsers.slurm_parser import (
+    parse_slurm_log, 
+    get_current_usage_summary,
+    store_slurm_jobs,
+    SlurmJob
+)
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
@@ -142,4 +148,208 @@ def get_active_calendar_events():
         return jsonify(events)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@api.route('/calendar/current-usage', methods=['GET'])
+def get_current_usage():
+    """Get current resource usage from Slurm logs"""
+    try:
+        log_file = os.path.join(CALENDAR_LOGS_DIR, 'slurm', 'slurm.log')
+        if not os.path.exists(log_file):
+            return jsonify({'error': 'Slurm log file not found'}), 404
+            
+        with open(log_file, 'r') as f:
+            log_content = f.read()
+            
+        # Parse the log file
+        jobs = parse_slurm_log(log_content)
+        
+        # Store jobs in database
+        db_path = current_app.config['DB_PATH']
+        store_slurm_jobs(jobs, db_path)
+        
+        # Get current usage summary
+        usage_summary = get_current_usage_summary(jobs, db_path)
+        
+        return jsonify({
+            'timestamp': datetime.now().isoformat(),
+            'usage': usage_summary
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@api.route('/users/<username>/overview', methods=['GET'])
+def get_user_overview(username):
+    try:
+        db_path = current_app.config['DB_PATH']
+        
+        # Get current usage
+        current_usage = get_user_current_usage(username, db_path)
+        
+        # Get running jobs
+        running_jobs = get_user_running_jobs(username, db_path)
+        
+        # Get job history (last 100 jobs)
+        job_history = get_user_job_history(username, db_path, limit=100)
+        
+        return jsonify({
+            'currentUsage': current_usage,
+            'runningJobs': running_jobs,
+            'jobHistory': job_history
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def get_user_current_usage(username, db_path):
+    """Get current resource usage for a specific user"""
+    conn = get_db_connection(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Get the latest log entry
+        cursor.execute("""
+            SELECT log_id, unix_timestamp 
+            FROM LogEntries 
+            ORDER BY unix_timestamp DESC 
+            LIMIT 1
+        """)
+        latest_log = cursor.fetchone()
+        if not latest_log:
+            return None
+            
+        log_id = latest_log[0]
+        
+        # Get user's current usage from the latest log using the Jobs table
+        cursor.execute("""
+            SELECT 
+                m.machine_name as host,
+                SUM(j.cpus) as total_cpus,
+                SUM(j.memory) as total_memory,
+                SUM(j.gpus) as total_gpus
+            FROM Jobs j
+            JOIN Machines m ON j.machine_id = m.machine_id
+            JOIN Users u ON j.user_id = u.user_id
+            WHERE j.log_id = ? AND u.username = ? AND j.state = 'RUNNING'
+            GROUP BY m.machine_name
+        """, (log_id, username))
+        
+        hosts = []
+        total_cpus = 0
+        total_memory = 0
+        total_gpus = 0
+        
+        for row in cursor.fetchall():
+            host = {
+                'name': row[0],
+                'cpus': row[1] or 0,
+                'memory': row[2] or 0,
+                'gpus': row[3] or 0
+            }
+            hosts.append(host)
+            total_cpus += row[1] or 0
+            total_memory += row[2] or 0
+            total_gpus += row[3] or 0
+            
+        return {
+            'hosts': hosts,
+            'totalCpus': total_cpus,
+            'totalMemory': total_memory,
+            'totalGpus': total_gpus
+        }
+    finally:
+        conn.close()
+
+def get_user_running_jobs(username, db_path):
+    """Get currently running jobs for a specific user"""
+    conn = get_db_connection(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Get running jobs from the latest log
+        cursor.execute("""
+            SELECT 
+                j.job_id,
+                m.machine_name as host,
+                j.cpus,
+                j.memory,
+                j.gpus,
+                j.runtime,
+                j.state,
+                j.command
+            FROM Jobs j
+            JOIN Machines m ON j.machine_id = m.machine_id
+            JOIN Users u ON j.user_id = u.user_id
+            JOIN LogEntries l ON j.log_id = l.log_id
+            WHERE u.username = ? 
+            AND j.state = 'RUNNING'
+            AND l.unix_timestamp = (
+                SELECT MAX(unix_timestamp) 
+                FROM LogEntries
+            )
+            ORDER BY j.job_id DESC
+        """, (username,))
+        
+        jobs = []
+        for row in cursor.fetchall():
+            job = {
+                'jobId': row[0],
+                'host': row[1],
+                'cpus': row[2],
+                'memory': row[3],
+                'gpus': row[4],
+                'runtime': row[5],
+                'state': row[6],
+                'command': row[7]
+            }
+            jobs.append(job)
+            
+        return jobs
+    finally:
+        conn.close()
+
+def get_user_job_history(username, db_path, limit=100):
+    """Get job history for a specific user"""
+    conn = get_db_connection(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Get job history
+        cursor.execute("""
+            SELECT 
+                j.job_id,
+                m.machine_name as host,
+                j.cpus,
+                j.memory,
+                j.gpus,
+                j.runtime,
+                j.state,
+                j.command,
+                l.timestamp as start_time
+            FROM Jobs j
+            JOIN Machines m ON j.machine_id = m.machine_id
+            JOIN Users u ON j.user_id = u.user_id
+            JOIN LogEntries l ON j.log_id = l.log_id
+            WHERE u.username = ?
+            ORDER BY l.unix_timestamp DESC, j.job_id DESC
+            LIMIT ?
+        """, (username, limit))
+        
+        jobs = []
+        for row in cursor.fetchall():
+            job = {
+                'jobId': row[0],
+                'host': row[1],
+                'cpus': row[2],
+                'memory': row[3],
+                'gpus': row[4],
+                'runtime': row[5],
+                'state': row[6],
+                'command': row[7],
+                'startTime': row[8]
+            }
+            jobs.append(job)
+            
+        return jobs
+    finally:
+        conn.close()
 

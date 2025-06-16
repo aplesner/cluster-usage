@@ -1,0 +1,56 @@
+.user-overview {
+    padding: 1rem;
+    background-color: var(--background-color);
+    border-radius: var(--border-radius);
+}
+
+.user-overview h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+    font-size: 1.5rem;
+}
+
+.user-overview h3 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    font-size: 1.2rem;
+}
+
+.user-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.user-overview-section {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--card-shadow);
+}
+
+.user-overview-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-color);
+}
+
+.error {
+    text-align: center;
+    padding: 2rem;
+    color: var(--danger-color);
+    background-color: var(--danger-background);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .user-overview-grid {
+        grid-template-columns: 1fr;
+    }
+} 

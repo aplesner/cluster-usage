@@ -1,5 +1,6 @@
 import React from 'react';
 import ActiveReservations from '../ActiveReservations';
+import CurrentUsage from './CurrentUsage';
 
 const CalendarView = () => {
   return (
@@ -26,6 +27,9 @@ const CalendarView = () => {
           </div>
         </div>
       </div>
+
+      {/* Current Usage Section */}
+      <CurrentUsage />
     </div>
   );
 };

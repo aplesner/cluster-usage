@@ -14,6 +14,8 @@ import {
 import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
+import UserCurrentUsage from './UserCurrentUsage';
+import UserJobs from './UserJobs';
 
 // Register Chart.js components
 ChartJS.register(
@@ -30,6 +32,9 @@ const UserDetail = () => {
   const { username } = useParams();
   const [userData, setUserData] = useState(null);
   const [timeData, setTimeData] = useState([]);
+  const [currentUsage, setCurrentUsage] = useState(null);
+  const [runningJobs, setRunningJobs] = useState([]);
+  const [jobHistory, setJobHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -45,6 +50,12 @@ const UserDetail = () => {
         // Fetch time stats
         const timeStats = await api.getUserTimeStats(username);
         setTimeData(timeStats);
+
+        // Fetch current usage, running jobs, and job history
+        const overviewData = await api.getUserOverview(username);
+        setCurrentUsage(overviewData.currentUsage);
+        setRunningJobs(overviewData.runningJobs);
+        setJobHistory(overviewData.jobHistory);
         
         setLoading(false);
       } catch (error) {
@@ -263,6 +274,36 @@ const UserDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Current Resource Usage */}
+      <div className="card">
+        <div className="card-header">
+          <h3>Current Resource Usage</h3>
+        </div>
+        <div className="card-body">
+          <UserCurrentUsage usage={currentUsage} />
+        </div>
+      </div>
+
+      {/* Running Jobs */}
+      <div className="card">
+        <div className="card-header">
+          <h3>Running Jobs</h3>
+        </div>
+        <div className="card-body">
+          <UserJobs jobs={runningJobs} isRunningJobs={true} />
+        </div>
+      </div>
+
+      {/* Job History */}
+      <div className="card">
+        <div className="card-header">
+          <h3>Job History</h3>
+        </div>
+        <div className="card-body">
+          <UserJobs jobs={jobHistory} isRunningJobs={false} />
+        </div>
+      </div>
     </div>
   );
 };
