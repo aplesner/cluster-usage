@@ -55,7 +55,8 @@ if [ ! -d "node_modules" ]; then
 fi
 
 log "Starting frontend development server..."
-npm start &
+# Use the development-specific script
+npm run dev &
 FRONTEND_PID=$!
 cd ..
 

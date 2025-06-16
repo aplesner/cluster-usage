@@ -1,6 +1,8 @@
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, send_from_directory
 import os
 import sys
+import json
+from datetime import datetime
 
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -10,6 +12,9 @@ from backend.database.queries import (
     get_user_usage, get_machine_usage, get_time_usage, get_size_distribution,
     get_time_stats_for_user, get_top_users_recent_logs, get_historic_usage
 )
+from backend.tasks.periodic_tasks import get_task_logs
+from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
+from backend.database.schema import get_db_connection
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
@@ -93,4 +98,48 @@ def historic_usage():
     top_n = request.args.get('top_n', default=10, type=int)
     historic_data = get_historic_usage(db_path, top_n)
     return jsonify(historic_data)
+
+@api.route('/task-logs', methods=['GET'])
+def task_logs():
+    """Get periodic task logs"""
+    limit = request.args.get('limit', default=100, type=int)
+    logs = get_task_logs(limit=limit)
+    return jsonify(logs)
+
+@api.route('/calendar/active', methods=['GET'])
+def get_active_calendar_events():
+    """Get currently active calendar events from the log file"""
+    try:
+        log_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_today.log')
+        if not os.path.exists(log_file):
+            return jsonify([])
+            
+        events = []
+        conn = get_db_connection(current_app.config['DB_PATH'])
+        cursor = conn.cursor()
+        
+        with open(log_file, 'r') as f:
+            for line in f:
+                if line.strip():
+                    event = json.loads(line)
+                    # Get user role from database
+                    cursor.execute("SELECT user_role FROM Users WHERE username = ?", (event['username'],))
+                    result = cursor.fetchone()
+                    user_role = result[0] if result else None
+                    
+                    events.append({
+                        'username': event['username'],
+                        'user_role': user_role,
+                        'resources': event['resources'],
+                        'comment': event['comment'],
+                        'start_time': event['start_time'],
+                        'end_time': event['end_time'],
+                        'duration': event['duration'],
+                        'timestamp': event['timestamp']
+                    })
+        
+        conn.close()
+        return jsonify(events)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 

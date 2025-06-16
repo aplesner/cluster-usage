@@ -75,6 +75,17 @@ def initialize_database(db_path: str):
     )
     ''')
     
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS PeriodicTaskLogs (
+        log_id INTEGER PRIMARY KEY,
+        timestamp DATETIME NOT NULL,
+        task_name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        message TEXT,
+        details TEXT
+    )
+    ''')
+    
     conn.commit()
     conn.close()
 

@@ -89,7 +89,14 @@ export const getTopUsersRecent = (logCount = 5, userCount = 10) =>
 export const getHistoricUsage = (topN = 10) => 
   fetchData(`/usage/historic?top_n=${topN}`);
 
-// Update the API object to include the new function
+/**
+ * Get periodic task logs
+ * @param {number} limit - Maximum number of logs to return
+ * @returns {Promise} - Promise with the task logs data
+ */
+export const getTaskLogs = (limit = 100) => 
+  fetchData(`/task-logs?limit=${limit}`);
+
 const api = {
   getUsers,
   getStats,
@@ -100,9 +107,16 @@ const api = {
   getSizeDistribution,
   getUserTimeStats,
   getTopUsersRecent,
-  getHistoricUsage
+  getHistoricUsage,
+  getTaskLogs,
+  async getActiveCalendarEvents() {
+    const response = await fetch('/api/calendar/active');
+    if (!response.ok) {
+      throw new Error('Failed to fetch active calendar events');
+    }
+    return response.json();
+  }
 };
-
 
 export default api;
 

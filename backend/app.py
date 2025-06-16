@@ -15,6 +15,9 @@ from config import (
 from backend.database import schema # import initialize_database, get_db_connection
 from api import routes # import api
 from parsers import log_parser # import process_log_file
+from backend.tasks.periodic_tasks import scheduler
+from backend.tasks.example_tasks import log_current_time
+from backend.tasks.calendar_tasks import get_active_calendar_events
 
 # Create Flask app
 app = Flask(__name__, static_folder=None)
@@ -130,4 +133,20 @@ if __name__ == '__main__':
         if not os.path.exists(DB_PATH):
             print(f"Database not found at {DB_PATH}. Initializing...")
             init_database()
-        app.run(host=HOST, port=PORT, debug=DEBUG)
+        
+        # Register and start the example task
+        scheduler.add_task("time_logger", log_current_time, interval_minutes=1)
+        print("Registered time_logger task (runs every minute)")
+        
+        # Register and start the calendar task
+        scheduler.add_task("calendar_checker", get_active_calendar_events, interval_minutes=1)
+        print("Registered calendar_checker task (runs every 5 minutes)")
+        
+        # Start the task scheduler
+        scheduler.start()
+        
+        try:
+            app.run(host=HOST, port=PORT, debug=DEBUG)
+        finally:
+            # Stop the scheduler when the app stops
+            scheduler.stop()

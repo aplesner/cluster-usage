@@ -4,6 +4,9 @@ import UserList from './components/users/UserList';
 import UserDetail from './components/users/UserDetail';
 import DashboardHome from './components/dashboard/DashboardHome';
 import HistoricUsage from './components/historic/HistoricUsage';
+import TaskLogs from './components/tasks/TaskLogs';
+import CalendarView from './components/calendar/CalendarView';
+import ActiveReservations from './components/ActiveReservations';
 import './App.css';
 
 function App() {
@@ -11,7 +14,7 @@ function App() {
     <div className="app">
       <header className="header">
         <div className="container">
-          <h1 className="logo">IO Usage Dashboard</h1>
+          <h1 className="logo">IO Usage Dashboard DE</h1>
           <nav className="nav">
             <ul className="nav-list">
               <li className="nav-item">
@@ -32,6 +35,12 @@ function App() {
               <li className="nav-item">
                 <Link to="/sizes" className="nav-link">Size Distribution</Link>
               </li>
+              <li className="nav-item">
+                <Link to="/tasks" className="nav-link">Task Logs</Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/calendar" className="nav-link">Calendar</Link>
+              </li>
             </ul>
           </nav>
         </div>
@@ -47,6 +56,8 @@ function App() {
             <Route path="/historic" element={<HistoricUsage />} />
             <Route path="/time" element={<div>Time Analysis (Coming Soon)</div>} />
             <Route path="/sizes" element={<div>Size Distribution (Coming Soon)</div>} />
+            <Route path="/tasks" element={<TaskLogs />} />
+            <Route path="/calendar" element={<CalendarView />} />
             <Route path="*" element={<div>Page Not Found</div>} />
           </Routes>
         </div>
