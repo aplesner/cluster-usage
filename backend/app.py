@@ -18,6 +18,7 @@ from parsers import log_parser # import process_log_file
 from backend.tasks.periodic_tasks import scheduler
 from backend.tasks.example_tasks import log_current_time
 from backend.tasks.calendar_tasks import get_active_calendar_events
+from backend.tasks.check_reservation import check_reservation_activity
 
 # Create Flask app
 app = Flask(__name__, static_folder=None)
@@ -140,7 +141,11 @@ if __name__ == '__main__':
         
         # Register and start the calendar task
         scheduler.add_task("calendar_checker", get_active_calendar_events, interval_minutes=1)
-        print("Registered calendar_checker task (runs every 5 minutes)")
+        print("Registered calendar_checker task (runs every minute)")
+        
+        # Register and start the reservation check task
+        scheduler.add_task("reservation_checker", check_reservation_activity, interval_minutes=1)
+        print("Registered reservation_checker task (runs every minutes)")
         
         # Start the task scheduler
         scheduler.start()

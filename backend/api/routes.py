@@ -10,9 +10,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from backend.database.queries import (
     get_database_stats, get_all_users, get_all_machines,
     get_user_usage, get_machine_usage, get_time_usage, get_size_distribution,
-    get_time_stats_for_user, get_top_users_recent_logs, get_historic_usage
+    get_time_stats_for_user, get_top_users_recent_logs, get_historic_usage,
+    get_historic_usage_per_user
 )
-from backend.tasks.periodic_tasks import get_task_logs
+from backend.tasks.periodic_tasks import get_task_logs, get_task_logs_count
 from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
 from backend.database.schema import get_db_connection
 from backend.parsers.slurm_parser import (
@@ -21,6 +22,7 @@ from backend.parsers.slurm_parser import (
     store_slurm_jobs,
     SlurmJob
 )
+from backend.email_notifications.email_notifications import get_email_notifications, get_email_notifications_count
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
@@ -107,10 +109,43 @@ def historic_usage():
 
 @api.route('/task-logs', methods=['GET'])
 def task_logs():
-    """Get periodic task logs"""
-    limit = request.args.get('limit', default=100, type=int)
-    logs = get_task_logs(limit=limit)
-    return jsonify(logs)
+    """Get periodic task logs with pagination"""
+    page = request.args.get('page', default=1, type=int)
+    limit = request.args.get('limit', default=20, type=int)
+    offset = (page - 1) * limit
+    
+    logs = get_task_logs(limit=limit, offset=offset)
+    total_count = get_task_logs_count()
+    
+    return jsonify({
+        'logs': logs,
+        'pagination': {
+            'page': page,
+            'limit': limit,
+            'total': total_count,
+            'pages': (total_count + limit - 1) // limit
+        }
+    })
+
+@api.route('/email-notifications', methods=['GET'])
+def email_notifications():
+    """Get email notifications with pagination"""
+    page = request.args.get('page', default=1, type=int)
+    limit = request.args.get('limit', default=20, type=int)
+    offset = (page - 1) * limit
+    
+    notifications = get_email_notifications(limit=limit, offset=offset)
+    total_count = get_email_notifications_count()
+    
+    return jsonify({
+        'notifications': notifications,
+        'pagination': {
+            'page': page,
+            'limit': limit,
+            'total': total_count,
+            'pages': (total_count + limit - 1) // limit
+        }
+    })
 
 @api.route('/calendar/active', methods=['GET'])
 def get_active_calendar_events():
@@ -165,6 +200,7 @@ def get_current_usage():
         
         # Store jobs in database
         db_path = current_app.config['DB_PATH']
+        print("CURRENTLY TRYING TO STORE JOBS")
         store_slurm_jobs(jobs, db_path)
         
         # Get current usage summary
@@ -352,4 +388,24 @@ def get_user_job_history(username, db_path, limit=100):
         return jobs
     finally:
         conn.close()
+
+@api.route('/users/<username>/historic-usage', methods=['GET'])
+def get_user_historic_usage(username):
+    """Get historic GPU usage for a specific user, grouped by machine"""
+    try:
+        db_path = current_app.config['DB_PATH']
+        usage_data = get_historic_usage_per_user(db_path, username)
+        return jsonify(usage_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@api.route('/historic-usage', methods=['GET'])
+def get_all_historic_usage():
+    """Get historic GPU usage for all users, grouped by machine"""
+    try:
+        db_path = current_app.config['DB_PATH']
+        usage_data = get_historic_usage_per_user(db_path)
+        return jsonify(usage_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 

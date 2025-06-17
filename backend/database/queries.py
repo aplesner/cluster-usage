@@ -651,3 +651,76 @@ def get_historic_usage(db_path: str, top_n: int = 10):
     
     conn.close()
     return log_entries
+
+
+def get_historic_usage_per_user(db_path: str, username: str = None):
+    """
+    Get historic GPU usage per user, grouped by machine.
+    
+    Args:
+        db_path: Path to the database
+        username: Optional username to filter by. If None, returns data for all users.
+        
+    Returns:
+        Dictionary mapping usernames to their GPU usage by machine
+    """
+    conn = get_db_connection(db_path)
+    cursor = conn.cursor()
+    
+    try:
+        if username:
+            # Get historic GPU usage for a specific user
+            query = """
+            SELECT 
+                u.username,
+                m.machine_name,
+                SUM(j.gpus) as total_gpus,
+                COUNT(j.job_id) as job_count
+            FROM Jobs j
+            JOIN Machines m ON j.machine_id = m.machine_id
+            JOIN Users u ON j.user_id = u.user_id
+            WHERE u.username = ?
+            GROUP BY u.username, m.machine_name
+            ORDER BY u.username, m.machine_name
+            """
+            cursor.execute(query, (username,))
+        else:
+            # Get historic GPU usage for all users
+            query = """
+            SELECT 
+                u.username,
+                m.machine_name,
+                SUM(j.gpus) as total_gpus,
+                COUNT(j.job_id) as job_count
+            FROM Jobs j
+            JOIN Machines m ON j.machine_id = m.machine_id
+            JOIN Users u ON j.user_id = u.user_id
+            GROUP BY u.username, m.machine_name
+            ORDER BY u.username, m.machine_name
+            """
+            cursor.execute(query)
+        
+        # Process results into a structured format
+        usage_by_user = {}
+        for row in cursor.fetchall():
+            user = row['username']
+            machine = row['machine_name']
+            total_gpus = row['total_gpus'] or 0
+            job_count = row['job_count'] or 0
+
+            
+            if user not in usage_by_user:
+                usage_by_user[user] = {}
+            
+            usage_by_user[user][machine] = {
+                'total_gpus': total_gpus,
+                'job_count': job_count
+            }
+        
+        return usage_by_user
+        
+    except Exception as e:
+        print(f"Error getting historic usage per user: {e}")
+        return {}
+    finally:
+        conn.close()

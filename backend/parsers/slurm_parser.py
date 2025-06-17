@@ -27,7 +27,6 @@ class SlurmJob:
     elapsed_time: str
     state: JobState
     command: str
-    is_array_job: bool
 
 @dataclass
 class UserResourceUsage:
@@ -45,6 +44,16 @@ def get_user_role(db_path: str, username: str) -> Optional[str]:
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
+        
+        # Check if Users table exists
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='Users'
+        """)
+        if not cursor.fetchone():
+            conn.close()
+            return None
+            
         cursor.execute("SELECT user_role FROM Users WHERE username = ?", (username,))
         result = cursor.fetchone()
         conn.close()
@@ -56,7 +65,6 @@ def get_user_role(db_path: str, username: str) -> Optional[str]:
 def parse_slurm_log(log_content: str) -> List[SlurmJob]:
     """Parse the content of a Slurm log file into a list of SlurmJob objects."""
     jobs = []
-    
     # Skip header lines
     lines = [line for line in log_content.split('\n') if line and not line.startswith('#')]
     
@@ -64,7 +72,7 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
         try:
             # Split by pipe character
             parts = line.strip().split('|')
-            if len(parts) != 12:  # We expect 12 fields
+            if len(parts) < 11:  # We need exactly 11 fields
                 continue
                 
             job_id = int(parts[0])
@@ -76,9 +84,19 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
             nodes = int(parts[6])
             node_list = parts[7]
             elapsed_time = parts[8]
-            state = JobState(parts[9])
+            
+            # Handle state field which might contain "CANCELLED by X"
+            state_str = parts[9]
+            if state_str.startswith("CANCELLED"):
+                state = JobState.CANCELLED
+            else:
+                try:
+                    state = JobState(state_str)
+                except ValueError:
+                    # If we can't parse the state, skip this job
+                    continue
+            
             command = parts[10]
-            is_array_job = parts[11].lower() == 'true'
             
             job = SlurmJob(
                 job_id=job_id,
@@ -92,7 +110,6 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
                 elapsed_time=elapsed_time,
                 state=state,
                 command=command,
-                is_array_job=is_array_job
             )
             jobs.append(job)
         except (ValueError, IndexError) as e:
@@ -169,6 +186,7 @@ def get_current_usage_summary(jobs: List[SlurmJob], db_path: str) -> List[Dict]:
 
 def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
     """Store Slurm jobs in the database"""
+    conn = None
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -186,6 +204,9 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
             (timestamp, unix_timestamp)
         )
         log_id = cursor.lastrowid
+        
+        # Clear all existing jobs before inserting new ones
+        cursor.execute("DELETE FROM Jobs")
         
         # Store each job
         for job in jobs:
@@ -216,9 +237,9 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
                 )
                 machine_id = cursor.lastrowid
             
-            # Insert job
+            # Insert job (use REPLACE to handle duplicate job IDs)
             cursor.execute("""
-                INSERT INTO Jobs (
+                INSERT OR REPLACE INTO Jobs (
                     job_id, log_id, user_id, machine_id,
                     cpus, memory, gpus, runtime, state, command
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -230,6 +251,7 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
         
         # Commit transaction
         conn.commit()
+
         return True
         
     except Exception as e:

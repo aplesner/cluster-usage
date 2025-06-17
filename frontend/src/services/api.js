@@ -90,12 +90,22 @@ export const getHistoricUsage = (topN = 10) =>
   fetchData(`/usage/historic?top_n=${topN}`);
 
 /**
- * Get periodic task logs
- * @param {number} limit - Maximum number of logs to return
- * @returns {Promise} - Promise with the task logs data
+ * Get periodic task logs with pagination
+ * @param {number} page - Page number (1-based)
+ * @param {number} limit - Number of items per page
+ * @returns {Promise} - Promise with the task logs data and pagination info
  */
-export const getTaskLogs = (limit = 100) => 
-  fetchData(`/task-logs?limit=${limit}`);
+export const getTaskLogs = (page = 1, limit = 20) => 
+  fetchData(`/task-logs?page=${page}&limit=${limit}`);
+
+/**
+ * Get email notifications with pagination
+ * @param {number} page - Page number (1-based)
+ * @param {number} limit - Number of items per page
+ * @returns {Promise} - Promise with the email notifications data and pagination info
+ */
+export const getEmailNotifications = (page = 1, limit = 20) => 
+  fetchData(`/email-notifications?page=${page}&limit=${limit}`);
 
 const api = {
   getUsers,
@@ -109,6 +119,7 @@ const api = {
   getTopUsersRecent,
   getHistoricUsage,
   getTaskLogs,
+  getEmailNotifications,
   async getActiveCalendarEvents() {
     const response = await fetch('/api/calendar/active');
     if (!response.ok) {

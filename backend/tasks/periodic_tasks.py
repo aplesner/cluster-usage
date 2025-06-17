@@ -92,17 +92,28 @@ class TaskScheduler:
 # Create a global scheduler instance
 scheduler = TaskScheduler(DB_PATH)
 
-def get_task_logs(limit=100):
-    """Get recent task logs from the database"""
+def get_task_logs(limit=20, offset=0):
+    """Get recent task logs from the database with pagination"""
     conn = get_db_connection(DB_PATH)
     cursor = conn.cursor()
     
     cursor.execute('''
         SELECT * FROM PeriodicTaskLogs 
         ORDER BY timestamp DESC 
-        LIMIT ?
-    ''', (limit,))
+        LIMIT ? OFFSET ?
+    ''', (limit, offset))
     
     logs = [dict(row) for row in cursor.fetchall()]
     conn.close()
-    return logs 
+    return logs
+
+def get_task_logs_count():
+    """Get total count of task logs"""
+    conn = get_db_connection(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT COUNT(*) as count FROM PeriodicTaskLogs')
+    result = cursor.fetchone()
+    count = result[0] if result else 0
+    conn.close()
+    return count 
