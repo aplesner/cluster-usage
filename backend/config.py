@@ -23,5 +23,5 @@ API_PREFIX = '/api'
 # App settings
 DEBUG = True
 HOST = '0.0.0.0'
-PORT = 5001
+PORT = 5000
 

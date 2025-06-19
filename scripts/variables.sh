@@ -6,3 +6,7 @@ export REMOTE_LOG_DIR="/usr/nostro/netvar/nfsdiostats/itetnas04"
 export LOG_FILE="nfsdiostats_tik.log"
 export LOCAL_LOG_DIR="data/logs/incoming"
 export LOG_FILE_NAME="io_usage.log"
+
+export SLURM_LOG_FILE="slurm.log"
+export SLURM_LOG_FILE_NAME="slurm.log"
+export LOCAL_SLURM_LOG_DIR="logs/calendar/slurm"
