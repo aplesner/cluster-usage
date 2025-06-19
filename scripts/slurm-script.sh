@@ -9,6 +9,7 @@ LOG_DIR="./slurm-logs"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 DATE_STR=$(date '+%Y-%m-%d')
 LAST_HOURS=""
+VERBOSE=false
  
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -21,8 +22,12 @@ while [[ $# -gt 0 ]]; do
             LAST_HOURS="$2"
             shift 2
             ;;
+        --verbose)
+            VERBOSE=true
+            shift 1
+            ;;
         *)
-            echo "Usage: $0 [--log-dir DIR] [--last-hours N]"
+            echo "Usage: $0 [--log-dir DIR] [--last-hours N] [--verbose]"
             echo "  --last-hours N    Get jobs from last N hours instead of current running jobs"
             exit 1
             ;;
@@ -49,11 +54,11 @@ fi
  
 # Create output file with header
 if [[ -n "$LAST_HOURS" ]]; then
-    output_file="$LOG_DIR/jobs_last_${LAST_HOURS}h_$DATE_STR.txt"
+    output_file="$LOG_DIR/jobs_last_${LAST_HOURS}h.txt"
     echo "# Slurm jobs from last $LAST_HOURS hours collected at $TIMESTAMP" > "$output_file"
     echo "# Format: JobID|User|Partition|CPUs|Memory|GPUs|Nodes|NodeList|ElapsedTime|State|Command" >> "$output_file"
 else
-    output_file="$LOG_DIR/running_jobs_$DATE_STR.txt"
+    output_file="$LOG_DIR/running_jobs.txt"
     echo "# Slurm running jobs collected at $TIMESTAMP" > "$output_file"
     echo "# Format: JobID|User|Partition|CPUs|Memory|GPUs|Nodes|NodeList|ElapsedTime|State|Command" >> "$output_file"
 fi
@@ -62,12 +67,12 @@ fi
 if [[ -n "$LAST_HOURS" ]]; then
     # Use sacct for historical data
     start_time=$(date -d "$LAST_HOURS hours ago" '+%Y-%m-%dT%H:%M:%S')
-    sacct --starttime="$start_time" --allusers --format="JobID,User,Partition,NCPUS,ReqMem,ReqTRES,NNodes,NodeList,Elapsed,State,JobName" --noheader --parsable2 > "$LOG_DIR/jobs_raw_last_${LAST_HOURS}h_$DATE_STR.txt"
-    raw_file="$LOG_DIR/jobs_raw_last_${LAST_HOURS}h_$DATE_STR.txt"
+    sacct --starttime="$start_time" --allusers --format="JobID,User,Partition,NCPUS,ReqMem,ReqTRES,NNodes,NodeList,Elapsed,State,JobName" --noheader --parsable2 > "$LOG_DIR/jobs_raw_last_${LAST_HOURS}h.txt"
+    raw_file="$LOG_DIR/jobs_raw_last_${LAST_HOURS}h.txt"
 else
     # Use squeue for current running jobs
-    squeue --states=RUNNING --format="%A|%u|%P|%C|%m|%b|%D|%N|%M|%T|%o" --noheader > "$LOG_DIR/running_jobs_raw_$DATE_STR.txt"
-    raw_file="$LOG_DIR/running_jobs_raw_$DATE_STR.txt"
+    squeue --states=RUNNING --format="%A|%u|%P|%C|%m|%b|%D|%N|%M|%T|%o" --noheader > "$LOG_DIR/running_jobs_raw.txt"
+    raw_file="$LOG_DIR/running_jobs_raw.txt"
 fi
  
 # Process and output each job individually
@@ -119,20 +124,23 @@ while IFS='|' read -r job_id user partition cpus memory gres nodes nodelist elap
         total_nodes=$((total_nodes + nodes))
     fi
 done < "$raw_file"
- 
-echo "Done! Generated files:"
-echo "  Jobs: $output_file"
-echo "  Raw data: $raw_file"
-echo ""
-if [[ -n "$LAST_HOURS" ]]; then
-    echo "Summary (last $LAST_HOURS hours):"
-else
-    echo "Summary (currently running):"
+
+# If verbose printing is enabled, output detailed information
+if [[ "$VERBOSE" == true ]]; then
+    echo "Done! Generated files:"
+    echo "  Jobs: $output_file"
+    echo "  Raw data: $raw_file"
+    echo ""
+    if [[ -n "$LAST_HOURS" ]]; then
+        echo "Summary (last $LAST_HOURS hours):"
+    else
+        echo "Summary (currently running):"
+    fi
+    echo "  Total jobs: $total_jobs"
+    echo "  Total CPUs in use: $total_cpus"
+    echo "  Total Memory in use: ${total_memory} MB"
+    echo "  Total GPUs in use: $total_gpus"
+    echo "  Total Nodes in use: $total_nodes"
 fi
-echo "  Total jobs: $total_jobs"
-echo "  Total CPUs in use: $total_cpus"
-echo "  Total Memory in use: ${total_memory} MB"
-echo "  Total GPUs in use: $total_gpus"
-echo "  Total Nodes in use: $total_nodes"
 
 ### EXECUTE WITH ./script.sh --last-hours 24 (and then set to like 4 hours)

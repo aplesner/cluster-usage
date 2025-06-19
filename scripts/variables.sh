@@ -9,4 +9,5 @@ export LOG_FILE_NAME="io_usage.log"
 
 export SLURM_LOG_FILE="slurm.log"
 export SLURM_LOG_FILE_NAME="slurm.log"
+export REMOTE_SLURM_LOG_DIR="~/bin/slurm-logs"
 export LOCAL_SLURM_LOG_DIR="logs/calendar/slurm"
