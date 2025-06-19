@@ -55,11 +55,8 @@ fi
  
 # Create output file with header
 if [[ -n "$LAST_HOURS" ]]; then
-    if LOGS; then
-        output_file="$LOG_DIR/slurm.log"
-    else
-        output_file="$LOG_DIR/jobs_last_${LAST_HOURS}h.txt"
-    fi
+    output_file="$LOG_DIR/slurm.log"
+    # output_file="$LOG_DIR/jobs_last_${LAST_HOURS}h.txt"
     echo "# Slurm jobs from last $LAST_HOURS hours collected at $TIMESTAMP" > "$output_file"
     echo "# Format: JobID|User|Partition|CPUs|Memory|GPUs|Nodes|NodeList|ElapsedTime|State|Command" >> "$output_file"
 else
