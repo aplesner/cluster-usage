@@ -5,6 +5,7 @@ import os
 import json
 import requests
 from dataclasses import dataclass
+import re
 
 from ..database.schema import get_db_connection
 from ..parsers.slurm_parser import get_current_usage_summary, parse_slurm_log
@@ -74,8 +75,13 @@ def check_reservation_activity():
             resource_usage_status = {}
             
             for resource_name, reserved_amount in reservation_resources.items():
-                # Get actual usage for this specific resource (host)
-                actual_amount = current_user_usage_by_host.get(resource_name, 0)
+                # Special handling for tikgpuX or tikgpux resources
+                if re.match(r"tikgpu[xX]$", resource_name, re.IGNORECASE):
+                    # Sum all GPUs in use by the user
+                    actual_amount = sum(current_user_usage_by_host.values())
+                else:
+                    # Default: usage for this specific host/resource
+                    actual_amount = current_user_usage_by_host.get(resource_name, 0)
                 
                 # Check if at least 50% of the reserved resource is being used
                 usage_percentage = actual_amount / reserved_amount if reserved_amount > 0 else 0
@@ -106,6 +112,8 @@ def check_reservation_activity():
             
             # Log activity status with detailed resource information
             if is_active:
+                print(f"Reservation active for {username}")
+                print(resource_usage_status)
                 pass
             else:
                 #logger.info(f"Reservation inactive for {username}: Insufficient resource usage")
@@ -118,7 +126,9 @@ def check_reservation_activity():
                 
                 context = f"Resources under 50% usage: {', '.join(context_parts)}"
                 send_email(username, "reservation-not-used", context)
+                print(f"Reservation inactive for {username}: Insufficient resource usage")
 
+                print(context)
         
         # Store activities in database
         store_reservation_activity(reservation_activities, DB_PATH)

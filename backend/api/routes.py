@@ -149,38 +149,39 @@ def email_notifications():
 
 @api.route('/calendar/active', methods=['GET'])
 def get_active_calendar_events():
-    """Get currently active calendar events from the log file"""
+    """Get currently active calendar events from the log file and unparsed events if available"""
     try:
         log_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_today.log')
-        if not os.path.exists(log_file):
-            return jsonify([])
-            
+        unparsed_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_unparsed.log')
         events = []
+        unparsed_events = []
         conn = get_db_connection(current_app.config['DB_PATH'])
         cursor = conn.cursor()
-        
-        with open(log_file, 'r') as f:
-            for line in f:
-                if line.strip():
-                    event = json.loads(line)
-                    # Get user role from database
-                    cursor.execute("SELECT user_role FROM Users WHERE username = ?", (event['username'],))
-                    result = cursor.fetchone()
-                    user_role = result[0] if result else None
-                    
-                    events.append({
-                        'username': event['username'],
-                        'user_role': user_role,
-                        'resources': event['resources'],
-                        'comment': event['comment'],
-                        'start_time': event['start_time'],
-                        'end_time': event['end_time'],
-                        'duration': event['duration'],
-                        'timestamp': event['timestamp']
-                    })
-        
+        if os.path.exists(log_file):
+            with open(log_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        event = json.loads(line)
+                        cursor.execute("SELECT user_role FROM Users WHERE username = ?", (event['username'],))
+                        result = cursor.fetchone()
+                        user_role = result[0] if result else None
+                        events.append({
+                            'username': event['username'],
+                            'user_role': user_role,
+                            'resources': event['resources'],
+                            'comment': event['comment'],
+                            'start_time': event['start_time'],
+                            'end_time': event['end_time'],
+                            'duration': event['duration'],
+                            'timestamp': event['timestamp']
+                        })
+        if os.path.exists(unparsed_file):
+            with open(unparsed_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        unparsed_events.append(line.strip())
         conn.close()
-        return jsonify(events)
+        return jsonify({'active_events': events, 'unparsed_events': unparsed_events})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

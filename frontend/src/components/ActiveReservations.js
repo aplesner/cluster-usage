@@ -7,13 +7,20 @@ import './ActiveReservations.css';
 
 function ActiveReservations() {
     const [reservations, setReservations] = useState([]);
+    const [unparsed, setUnparsed] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchReservations = async () => {
         try {
             const data = await api.getActiveCalendarEvents();
-            setReservations(data);
+            if (Array.isArray(data)) {
+                setReservations(data);
+                setUnparsed([]);
+            } else {
+                setReservations(data.active_events || []);
+                setUnparsed(data.unparsed_events || []);
+            }
             setLoading(false);
         } catch (error) {
             console.error('Error fetching active reservations:', error);
@@ -90,6 +97,16 @@ function ActiveReservations() {
                             )}
                         </div>
                     ))}
+                </div>
+            )}
+            {unparsed.length > 0 && (
+                <div className="unparsed-reservations">
+                    <h3>Unparsed Reservations</h3>
+                    <ul>
+                        {unparsed.map((summary, idx) => (
+                            <li key={idx}><code>{summary}</code></li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </div>

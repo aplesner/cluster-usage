@@ -50,19 +50,18 @@ def ensure_calendar_logs_dir():
     if not os.path.exists(CALENDAR_LOGS_DIR):
         os.makedirs(CALENDAR_LOGS_DIR)
 
-def write_calendar_entries_to_log(active_events):
-    """Write all active calendar entries to the log file.
-    Always writes to calendar_today.log, overwriting previous entries.
-    """
+def write_calendar_entries_to_log(active_events, unparsed_events=[]):
+    """Write all active and unparsed calendar entries to their respective log files, overwriting previous entries."""
     ensure_calendar_logs_dir()
-    
-    # Always use calendar_today.log
     log_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_today.log')
-    
-    # Write all entries to the log file (overwriting previous content)
     with open(log_file, 'w') as f:
         for event in active_events:
             f.write(json.dumps(event) + '\n')
+    if unparsed_events is not None:
+        unparsed_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_unparsed.log')
+        with open(unparsed_file, 'w') as f:
+            for summary in unparsed_events:
+                f.write(summary + '\n')
 
 def parse_event_summary(summary):
     """Parse event summary to extract username, resources, and comment.
@@ -159,38 +158,36 @@ def get_active_calendar_events():
         # Format the events into a readable string
         active_events = []
         log_entries = []
+        unparsed_events = []
         
         for event in cal.walk('VEVENT'):
             start = event.get('dtstart').dt
             end = event.get('dtend').dt
             summary = str(event.get('summary', 'No title'))
             
-            # Parse the event summary
-            parsed_event = parse_event_summary(summary)
-            
             # Convert dates to datetimes for consistent comparison
             if isinstance(start, date) and not isinstance(start, datetime):
-                # Convert date to datetime at midnight in local timezone
                 start = local_tz.localize(datetime.combine(start, datetime.min.time()))
             elif isinstance(start, datetime) and start.tzinfo is None:
-                # If datetime is naive, assume it's in local timezone
                 start = local_tz.localize(start)
             elif isinstance(start, datetime):
-                # If datetime is timezone-aware, convert to local timezone
                 start = start.astimezone(local_tz)
-                
             if isinstance(end, date) and not isinstance(end, datetime):
-                # Convert date to datetime at midnight in local timezone
                 end = local_tz.localize(datetime.combine(end, datetime.min.time()))
             elif isinstance(end, datetime) and end.tzinfo is None:
-                # If datetime is naive, assume it's in local timezone
                 end = local_tz.localize(end)
             elif isinstance(end, datetime):
-                # If datetime is timezone-aware, convert to local timezone
                 end = end.astimezone(local_tz)
             
             # Check if the event is currently active
             is_active = start <= now <= end
+            
+            # Parse the event summary
+            parsed_event = parse_event_summary(summary)
+            if parsed_event is None:
+                if is_active:
+                    unparsed_events.append(summary)
+                continue
             
             if is_active and parsed_event:
                 # Only include events for users that exist in the database
@@ -227,13 +224,15 @@ def get_active_calendar_events():
                 active_events.append('\n'.join(details))
         
         # Write all entries to log file at once
-        if log_entries:
-            write_calendar_entries_to_log(log_entries)
+        write_calendar_entries_to_log(log_entries, unparsed_events)
         
+        result = {
+            'active_events': active_events,
+            'unparsed_events': unparsed_events
+        }
         if not active_events:
-            return "No active events found at the current time."
-        
-        return active_events
+            result['message'] = "No active events found at the current time."
+        return result
         
     except requests.exceptions.RequestException as e:
         return f"Error fetching calendar events: {str(e)}"
