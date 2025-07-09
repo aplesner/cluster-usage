@@ -107,6 +107,15 @@ export const getTaskLogs = (page = 1, limit = 20) =>
 export const getEmailNotifications = (page = 1, limit = 20) => 
   fetchData(`/email-notifications?page=${page}&limit=${limit}`);
 
+/**
+ * Get number of sent emails to each user for a given time range
+ * @param {string} startTime - Start of the time range (ISO string)
+ * @param {string} endTime - End of the time range (ISO string)
+ * @returns {Promise} - Promise with the counts object { counts: { username: count, ... } }
+ */
+export const getEmailCountsByUser = (startTime, endTime) =>
+  fetchData(`/email-notifications/counts?start_time=${encodeURIComponent(startTime)}&end_time=${encodeURIComponent(endTime)}`);
+
 const api = {
   getUsers,
   getStats,
@@ -120,6 +129,7 @@ const api = {
   getHistoricUsage,
   getTaskLogs,
   getEmailNotifications,
+  getEmailCountsByUser,
   async getActiveCalendarEvents() {
     const response = await fetch('/api/calendar/active');
     if (!response.ok) {

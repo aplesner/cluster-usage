@@ -21,7 +21,7 @@ os.makedirs(ARCHIVE_LOGS_DIR, exist_ok=True)
 API_PREFIX = '/api'
 
 # App settings
-DEBUG = True
+DEBUG = False
 HOST = '0.0.0.0'
-PORT = 5000
+PORT = 5001
 

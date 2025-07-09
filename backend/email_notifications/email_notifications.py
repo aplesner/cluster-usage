@@ -348,3 +348,39 @@ def get_email_notifications_count() -> int:
         return 0
     finally:
         conn.close() 
+
+def get_email_counts_by_user(start_time: str, end_time: str) -> dict:
+    """
+    Get the number of sent emails to each user in a given time range.
+    Args:
+        start_time: Start of the time range (inclusive), as ISO string or 'YYYY-MM-DD HH:MM:SS'.
+        end_time: End of the time range (inclusive), as ISO string or 'YYYY-MM-DD HH:MM:SS'.
+    Returns:
+        Dict mapping username to count of sent emails.
+    """
+    import re
+    conn = get_db_connection(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT message FROM PeriodicTaskLogs 
+            WHERE task_name LIKE 'email-%' 
+              AND timestamp >= ? AND timestamp <= ?
+            """,
+            (start_time, end_time)
+        )
+        user_counts = {}
+        pattern = re.compile(r"Email notification sent to ([^\s]+)")
+        for row in cursor.fetchall():
+            message = row[0]
+            match = pattern.search(message or "")
+            if match:
+                username = match.group(1)
+                user_counts[username] = user_counts.get(username, 0) + 1
+        return user_counts
+    except Exception as e:
+        logger.error(f"Error getting email counts by user: {str(e)}")
+        return {}
+    finally:
+        conn.close() 

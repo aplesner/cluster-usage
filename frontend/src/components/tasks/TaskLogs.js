@@ -3,6 +3,50 @@ import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
+const EMAIL_PERIODS = [
+  { label: '24 hours', value: '24h' },
+  { label: '72 hours', value: '72h' },
+  { label: '1 week', value: '1w' },
+  { label: '1 month', value: '1m' },
+  { label: '3 months', value: '3m' },
+  { label: '6 months', value: '6m' },
+  { label: '1 year', value: '1y' },
+];
+
+function getPeriodRange(periodValue) {
+  const now = new Date();
+  let start = new Date(now);
+  switch (periodValue) {
+    case '24h':
+      start.setHours(now.getHours() - 24);
+      break;
+    case '72h':
+      start.setHours(now.getHours() - 72);
+      break;
+    case '1w':
+      start.setDate(now.getDate() - 7);
+      break;
+    case '1m':
+      start.setMonth(now.getMonth() - 1);
+      break;
+    case '3m':
+      start.setMonth(now.getMonth() - 3);
+      break;
+    case '6m':
+      start.setMonth(now.getMonth() - 6);
+      break;
+    case '1y':
+      start.setFullYear(now.getFullYear() - 1);
+      break;
+    default:
+      start.setHours(now.getHours() - 24);
+  }
+  return {
+    start_time: start.toISOString().slice(0, 19),
+    end_time: now.toISOString().slice(0, 19),
+  };
+}
+
 const TaskLogs = () => {
   const [logs, setLogs] = useState([]);
   const [emailNotifications, setEmailNotifications] = useState([]);
@@ -26,6 +70,13 @@ const TaskLogs = () => {
     total: 0,
     pages: 0
   });
+
+  const [emailCountsPeriod, setEmailCountsPeriod] = useState('24h');
+  const [emailCounts, setEmailCounts] = useState({});
+  const [emailCountsLoading, setEmailCountsLoading] = useState(false);
+  const [emailCountsError, setEmailCountsError] = useState(null);
+
+  const [emailMessageFilter, setEmailMessageFilter] = useState('');
 
   const fetchData = async (emailPage = 1, taskPage = 1) => {
     try {
@@ -52,6 +103,23 @@ const TaskLogs = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    async function fetchEmailCounts() {
+      setEmailCountsLoading(true);
+      setEmailCountsError(null);
+      try {
+        const { start_time, end_time } = getPeriodRange(emailCountsPeriod);
+        const res = await api.getEmailCountsByUser(start_time, end_time);
+        setEmailCounts(res.counts || {});
+      } catch (err) {
+        setEmailCountsError('Failed to fetch email counts');
+      } finally {
+        setEmailCountsLoading(false);
+      }
+    }
+    fetchEmailCounts();
+  }, [emailCountsPeriod]);
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -140,6 +208,11 @@ const TaskLogs = () => {
     }
     return 0;
   });
+
+  // Filtered and sorted email notifications
+  const filteredEmailNotifications = sortedEmailNotifications.filter(n =>
+    !emailMessageFilter || (n.message && n.message.toLowerCase().includes(emailMessageFilter.toLowerCase()))
+  );
 
   // Get status badge class
   const getStatusBadgeClass = (status) => {
@@ -246,10 +319,70 @@ const TaskLogs = () => {
     <div className="tasks-container">
       <h2 className="page-title">Task Logs & Email Notifications</h2>
       
+      {/* Email Counts by User Section */}
+      <div className="card">
+        <div className="card-header">
+          <h3>Sent Emails by User</h3>
+          <div style={{ marginTop: 8 }}>
+            <label htmlFor="email-period-select">Period: </label>
+            <select
+              id="email-period-select"
+              value={emailCountsPeriod}
+              onChange={e => setEmailCountsPeriod(e.target.value)}
+              style={{ marginLeft: 8 }}
+            >
+              {EMAIL_PERIODS.map(p => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="card-body">
+          {emailCountsLoading ? (
+            <LoadingSpinner />
+          ) : emailCountsError ? (
+            <ErrorMessage message={emailCountsError} />
+          ) : (
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Sent Emails</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys(emailCounts).length === 0 ? (
+                    <tr><td colSpan="2" style={{ textAlign: 'center' }}>No emails sent in this period</td></tr>
+                  ) : (
+                    Object.entries(emailCounts).map(([user, count]) => (
+                      <tr key={user}>
+                        <td>{user}</td>
+                        <td>{count}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+      
       {/* Email Notifications Section */}
       <div className="card">
         <div className="card-header">
           <h3>Email Notifications ({emailPagination.total} total)</h3>
+          <div style={{ marginTop: 8 }}>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Filter by message..."
+              value={emailMessageFilter}
+              onChange={e => setEmailMessageFilter(e.target.value)}
+              style={{ width: 250 }}
+            />
+          </div>
         </div>
         <div className="card-body">
           <div className="table-container">
@@ -279,8 +412,8 @@ const TaskLogs = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedEmailNotifications.length > 0 ? (
-                  sortedEmailNotifications.map((notification, index) => (
+                {filteredEmailNotifications.length > 0 ? (
+                  filteredEmailNotifications.map((notification, index) => (
                     <tr key={index}>
                       <td>{formatDate(notification.timestamp)}</td>
                       <td>

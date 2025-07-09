@@ -22,7 +22,7 @@ from backend.parsers.slurm_parser import (
     store_slurm_jobs,
     SlurmJob
 )
-from backend.email_notifications.email_notifications import get_email_notifications, get_email_notifications_count
+from backend.email_notifications.email_notifications import get_email_notifications, get_email_notifications_count, get_email_counts_by_user
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
@@ -146,6 +146,23 @@ def email_notifications():
             'pages': (total_count + limit - 1) // limit
         }
     })
+
+@api.route('/email-notifications/counts', methods=['GET'])
+def email_notifications_counts():
+    """Get number of sent emails to each user for a given time range"""
+    start_time = request.args.get('start_time')
+    end_time = request.args.get('end_time')
+    if not start_time or not end_time:
+        return jsonify({'error': 'start_time and end_time query parameters are required (ISO format)'}), 400
+    try:
+        # Validate time format (will raise if invalid)
+        from datetime import datetime
+        datetime.fromisoformat(start_time)
+        datetime.fromisoformat(end_time)
+    except Exception:
+        return jsonify({'error': 'Invalid time format. Use ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)'}), 400
+    counts = get_email_counts_by_user(start_time, end_time)
+    return jsonify({'counts': counts})
 
 @api.route('/calendar/active', methods=['GET'])
 def get_active_calendar_events():
