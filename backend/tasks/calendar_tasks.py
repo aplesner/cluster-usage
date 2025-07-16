@@ -25,6 +25,11 @@ def is_valid_user(username):
     conn.close()
     return result is not None
 
+def is_valid_resource(resource_name):
+    """Check if the resource name matches allowed patterns."""
+    # Matches artongpu01-10, tikgpu01-10, artongpu1-9, tikgpu1-9, tikgpuX
+    return re.match(r'^(artongpu(0[1-9]|10|[1-9])|tikgpu(0[1-9]|10|[1-9]|X))$', resource_name) is not None
+
 def calculate_duration(start_time, end_time):
     """Calculate the duration between start and end time in days and hours"""
     if isinstance(start_time, str):
@@ -73,16 +78,21 @@ def parse_event_summary(summary):
         'comment': str or None,
         'original': str
     }
+    If invalid, returns {'error': reason, 'original': summary}
     """
     summary = summary.strip()
     
     # Step 1: Split by @ to get username and the rest
     if '@' not in summary:
-        return None
+        return {'error': 'missing @', 'original': summary}
     
     username, rest = summary.split('@', 1)
     username = username.strip()
     rest = rest.strip()
+    
+    # Check if username is valid
+    if not is_valid_user(username):
+        return {'error': f'invalid username: {username}', 'original': summary}
     
     # Step 2: Extract comment if present
     comment = None
@@ -105,7 +115,7 @@ def parse_event_summary(summary):
         entry = entry.strip()
         if not entry:
             continue
-            
+        
         # Try to match patterns like "4x", "4xtikgpu10", "x tikgpu10"
         number_match = re.match(r'^(\d+)?x', entry)
         if number_match:
@@ -118,14 +128,20 @@ def parse_event_summary(summary):
             # Extract the resource name (everything after the x)
             resource = entry[number_match.end():].strip()
             if resource:  # If resource name is in the same entry
+                if not is_valid_resource(resource):
+                    return {'error': f'invalid resource: {resource}', 'original': summary}
                 resources.append((current_number, resource))
                 current_number = None
         elif current_number is not None:
             # If we have a number from previous entry, this must be the resource
+            if not is_valid_resource(entry):
+                return {'error': f'invalid resource: {entry}', 'original': summary}
             resources.append((current_number, entry))
             current_number = None
         else:
             # If no number found, assume 8x
+            if not is_valid_resource(entry):
+                return {'error': f'invalid resource: {entry}', 'original': summary}
             resources.append((8, entry))
     
     return {
@@ -165,34 +181,43 @@ def get_active_calendar_events():
             end = event.get('dtend').dt
             summary = str(event.get('summary', 'No title'))
             
+
+                
             # Convert dates to datetimes for consistent comparison
             if isinstance(start, date) and not isinstance(start, datetime):
+                # Convert date to datetime at midnight in local timezone
                 start = local_tz.localize(datetime.combine(start, datetime.min.time()))
             elif isinstance(start, datetime) and start.tzinfo is None:
+                # If datetime is naive, assume it's in local timezone
                 start = local_tz.localize(start)
             elif isinstance(start, datetime):
+                # If datetime is timezone-aware, convert to local timezone
                 start = start.astimezone(local_tz)
+                
             if isinstance(end, date) and not isinstance(end, datetime):
+                # Convert date to datetime at midnight in local timezone
                 end = local_tz.localize(datetime.combine(end, datetime.min.time()))
             elif isinstance(end, datetime) and end.tzinfo is None:
+                # If datetime is naive, assume it's in local timezone
                 end = local_tz.localize(end)
             elif isinstance(end, datetime):
+                # If datetime is timezone-aware, convert to local timezone
                 end = end.astimezone(local_tz)
             
             # Check if the event is currently active
             is_active = start <= now <= end
-            
+
+            if not is_active:
+                continue
+
             # Parse the event summary
             parsed_event = parse_event_summary(summary)
-            if parsed_event is None:
-                if is_active:
-                    unparsed_events.append(summary)
+            if 'error' in parsed_event:
+                unparsed_events.append(f"{summary} [reason: {parsed_event['error']}]")
                 continue
-            
+ 
             if is_active and parsed_event:
                 # Only include events for users that exist in the database
-                if not is_valid_user(parsed_event['username']):
-                    continue
                     
                 # Calculate duration
                 duration = calculate_duration(start, end)
