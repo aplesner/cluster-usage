@@ -58,18 +58,19 @@ if [[ -n "$LAST_HOURS" ]]; then
     output_file="$LOG_DIR/slurm.log"
     # output_file="$LOG_DIR/jobs_last_${LAST_HOURS}h.txt"
     echo "# Slurm jobs from last $LAST_HOURS hours collected at $TIMESTAMP" > "$output_file"
-    echo "# Format: JobID|User|Partition|CPUs|Memory|GPUs|Nodes|NodeList|ElapsedTime|State|Command" >> "$output_file"
+    echo "# Format: JobID|User|Partition|CPUs|Memory|GPUs|Nodes|NodeList|ElapsedTime|State|Command|Time" >> "$output_file"
 else
     output_file="$LOG_DIR/running_jobs.txt"
     echo "# Slurm running jobs collected at $TIMESTAMP" > "$output_file"
-    echo "# Format: JobID|User|Partition|CPUs|Memory|GPUs|Nodes|NodeList|ElapsedTime|State|Command" >> "$output_file"
+    echo "# Format: JobID|User|Partition|CPUs|Memory|GPUs|Nodes|NodeList|ElapsedTime|State|Command|Time" >> "$output_file"
 fi
  
 # Get job data with appropriate command
 if [[ -n "$LAST_HOURS" ]]; then
     # Use sacct for historical data
     start_time=$(date -d "$LAST_HOURS hours ago" '+%Y-%m-%dT%H:%M:%S')
-    sacct --starttime="$start_time" --allusers --format="JobID,User,Partition,NCPUS,ReqMem,ReqTRES,NNodes,NodeList,Elapsed,State,JobName" --noheader --parsable2 > "$LOG_DIR/jobs_raw_last_${LAST_HOURS}h.txt"
+    #sacct --starttime="$start_time" --allusers --format="JobID,User,Partition,NCPUS,ReqMem,ReqTRES,NNodes,NodeList,Elapsed,State,JobName" --noheader --parsable2 > "$LOG_DIR/jobs_raw_last_${LAST_HOURS}h.txt"
+    sacct --starttime="$start_time" --allusers --format="JobID,User,Partition,NCPUS,ReqMem,ReqTRES,NNodes,NodeList,Elapsed,State,JobName,End" --noheader --parsable2 > "$LOG_DIR/jobs_raw_last_${LAST_HOURS}h.txt"
     raw_file="$LOG_DIR/jobs_raw_last_${LAST_HOURS}h.txt"
 else
     # Use squeue for current running jobs

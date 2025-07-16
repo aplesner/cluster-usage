@@ -329,7 +329,8 @@ def get_user_running_jobs(username, db_path):
                 j.gpus,
                 j.runtime,
                 j.state,
-                j.command
+                j.command,
+                j.end_time
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
@@ -353,7 +354,8 @@ def get_user_running_jobs(username, db_path):
                 'gpus': row[4],
                 'runtime': row[5],
                 'state': row[6],
-                'command': row[7]
+                'command': row[7],
+                'endTime': row[8]
             }
             jobs.append(job)
             
@@ -378,7 +380,8 @@ def get_user_job_history(username, db_path, limit=100):
                 j.runtime,
                 j.state,
                 j.command,
-                l.timestamp as start_time
+                l.timestamp as start_time,
+                j.end_time
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
@@ -399,7 +402,8 @@ def get_user_job_history(username, db_path, limit=100):
                 'runtime': row[5],
                 'state': row[6],
                 'command': row[7],
-                'startTime': row[8]
+                'startTime': row[8],
+                'endTime': row[9]
             }
             jobs.append(job)
             

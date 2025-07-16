@@ -92,6 +92,7 @@ def initialize_database(db_path: str):
         runtime TEXT NOT NULL,
         state TEXT NOT NULL,
         command TEXT NOT NULL,
+        end_time TEXT NOT NULL,
         FOREIGN KEY (log_id) REFERENCES LogEntries (log_id),
         FOREIGN KEY (user_id) REFERENCES Users (user_id),
         FOREIGN KEY (machine_id) REFERENCES Machines (machine_id)
@@ -108,6 +109,16 @@ def initialize_database(db_path: str):
         details TEXT
     )
     ''')
+    
+    # Add end_time column to Jobs table if it does not exist
+    try:
+        cursor.execute("PRAGMA table_info(Jobs)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if 'end_time' not in columns:
+            cursor.execute("ALTER TABLE Jobs ADD COLUMN end_time TEXT NOT NULL DEFAULT ''")
+            print("Added end_time column to Jobs table.")
+    except Exception as e:
+        print(f"Error checking/adding end_time column: {e}")
     
     conn.commit()
     conn.close()

@@ -117,6 +117,7 @@ const CurrentUsage = () => {
                                     >
                                         GPUs
                                     </th>
+                                    <th>Active Total GPU Hours</th>
                                     <th>Hosts</th>
                                     <th>Actions</th>
                                 </tr>
@@ -136,6 +137,7 @@ const CurrentUsage = () => {
                                             <td>{user.total_cpus}</td>
                                             <td>{user.total_memory_gb.toFixed(1)}</td>
                                             <td>{user.total_gpus}</td>
+                                            <td>{user.total_gpu_hours !== undefined ? user.total_gpu_hours.toFixed(2) : 'N/A'}</td>
                                             <td>
                                                 <div className="hosts-list">
                                                     {user.hosts.map((host, idx) => (
@@ -154,7 +156,7 @@ const CurrentUsage = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="7" style={{ textAlign: 'center' }}>
+                                        <td colSpan="8" style={{ textAlign: 'center' }}>
                                             No active jobs found
                                         </td>
                                     </tr>

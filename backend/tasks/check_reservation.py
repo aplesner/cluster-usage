@@ -196,35 +196,29 @@ def store_reservation_activity(activities: List[ReservationActivity], db_path: s
     finally:
         conn.close()
 
-def get_user_gpu_usage_by_host_api(username: str) -> Dict[str, int]:
+def get_user_gpu_usage_by_host_api(username: str) -> Dict[str, float]:
     """
-    Get the total number of GPUs used by a specific user on each host via API call.
-    
+    Get the total GPU hours used by a specific user on each host via API call.
     Args:
         username: The username to check
-        
     Returns:
-        Dictionary mapping host names to total GPU count used
+        Dictionary mapping host names to total GPU hours used
     """
     try:
         # Construct API URL using config values
         api_base_url = f"http://{HOST}:{PORT}"
         url = f"{api_base_url}/api/users/{username}/historic-usage"
-        
         response = requests.get(url, timeout=10)
         response.raise_for_status()
-        
         data = response.json()
         if username in data and data[username]:
-            # Convert the API response format to the expected format
             usage_by_host = {}
             for machine, machine_data in data[username].items():
-                usage_by_host[machine] = machine_data['total_gpus']
+                usage_by_host[machine] = machine_data.get('total_gpu_hours', 0.0)
             return usage_by_host
         else:
             logger.info(f"No historic usage data found for user {username}")
             return {}
-            
     except requests.exceptions.RequestException as e:
         logger.error(f"Error calling API for user {username}: {str(e)}")
         return {}

@@ -1,5 +1,6 @@
 import os
 import sys
+from backend.config import GPU_MAX_HOURS
 
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -653,72 +654,113 @@ def get_historic_usage(db_path: str, top_n: int = 10):
     return log_entries
 
 
+def parse_runtime_to_hours(runtime_str):
+    """Parse a runtime string (HH:MM:SS or D-HH:MM:SS) to hours as float."""
+    import re
+    if not runtime_str:
+        return 0.0
+    # Match D-HH:MM:SS or HH:MM:SS
+    match = re.match(r"(?:(\d+)-)?(\d+):(\d+):(\d+)", runtime_str)
+    if not match:
+        return 0.0
+    days, hours, minutes, seconds = match.groups(default="0")
+    total_hours = int(days) * 24 + int(hours) + int(minutes) / 60 + int(seconds) / 3600
+    return total_hours
+
+MAX_DURATION = GPU_MAX_HOURS
+
 def get_historic_usage_per_user(db_path: str, username: str = None):
+    print("GET HISTORIC USAGE IS CALLED ------------------------------------------------------------")
     """
     Get historic GPU usage per user, grouped by machine.
-    
-    Args:
-        db_path: Path to the database
-        username: Optional username to filter by. If None, returns data for all users.
-        
-    Returns:
-        Dictionary mapping usernames to their GPU usage by machine
+    For completed jobs (with end_time), only count the last GPU_MAX_HOURS of runtime.
     """
+    from datetime import datetime, timedelta
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
-    
     try:
         if username:
-            # Get historic GPU usage for a specific user
             query = """
             SELECT 
                 u.username,
                 m.machine_name,
-                SUM(j.gpus) as total_gpus,
-                COUNT(j.job_id) as job_count
+                j.gpus,
+                j.runtime,
+                j.end_time
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
             WHERE u.username = ?
-            GROUP BY u.username, m.machine_name
-            ORDER BY u.username, m.machine_name
             """
             cursor.execute(query, (username,))
         else:
-            # Get historic GPU usage for all users
             query = """
             SELECT 
                 u.username,
                 m.machine_name,
-                SUM(j.gpus) as total_gpus,
-                COUNT(j.job_id) as job_count
+                j.gpus,
+                j.runtime,
+                j.end_time
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
-            GROUP BY u.username, m.machine_name
-            ORDER BY u.username, m.machine_name
             """
             cursor.execute(query)
-        
-        # Process results into a structured format
         usage_by_user = {}
         for row in cursor.fetchall():
             user = row['username']
             machine = row['machine_name']
-            total_gpus = row['total_gpus'] or 0
-            job_count = row['job_count'] or 0
+            gpus = row['gpus'] or 0
+            runtime = row['runtime'] or ''
+            end_time_str = row['end_time'] or ''
+            capped_hours = 0.0
 
-            
+            if ('Unknown' not in end_time_str) and (end_time_str is not ''):
+                try:
+                    # Parse end_time and runtime
+                    end_time = datetime.fromisoformat(end_time_str)
+                    # parse_runtime_to_hours returns float hours, but we want timedelta
+                    import re
+                    match = re.match(r"(?:(\d+)-)?(\d+):(\d+):(\d+)", runtime)
+                    if match:
+                        days, hours, minutes, seconds = match.groups(default="0")
+                        duration = timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
+                        start_time = end_time - duration
+                        from datetime import datetime, timedelta
+                        now = datetime.now()
+                        if user == "svetter":
+                            print("now: ", now)
+                            print(start_time)
+                        min_start_time = now - timedelta(hours=GPU_MAX_HOURS)
+                        if start_time < min_start_time:
+                            start_time = min_start_time
+                        capped_duration = end_time - start_time
+                        capped_hours = capped_duration.total_seconds() / 3600.0
+                        capped_hours = max(0, capped_hours)
+                    else:
+                        capped_hours = 0.0
+                except Exception:
+                    capped_hours = 0.0
+            else:
+                # If no end_time, fallback to old logic (use runtime capped at GPU_MAX_HOURS)
+                capped_hours = min(parse_runtime_to_hours(runtime), GPU_MAX_HOURS)
+            gpu_hours = gpus * capped_hours
             if user not in usage_by_user:
                 usage_by_user[user] = {}
-            
-            usage_by_user[user][machine] = {
-                'total_gpus': total_gpus,
-                'job_count': job_count
-            }
-        
+            if machine not in usage_by_user[user]:
+                usage_by_user[user][machine] = {
+                    'total_gpus': 0,
+                    'job_count': 0,
+                    'total_gpu_hours': 0.0
+                }
+            usage_by_user[user][machine]['total_gpus'] += gpus
+            usage_by_user[user][machine]['job_count'] += 1
+            usage_by_user[user][machine]['total_gpu_hours'] += gpu_hours
+        # Normalize total_gpu_hours by GPU_MAX_HOURS
+        for user in usage_by_user:
+            for machine in usage_by_user[user]:
+                usage_by_user[user][machine]['total_gpu_hours'] /= GPU_MAX_HOURS
         return usage_by_user
-        
     except Exception as e:
         print(f"Error getting historic usage per user: {e}")
         return {}

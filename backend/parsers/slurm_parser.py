@@ -6,6 +6,8 @@ from enum import Enum
 import sqlite3
 import os
 from flask import jsonify
+from collections import defaultdict
+from backend.config import GPU_MAX_HOURS
 
 class JobState(Enum):
     RUNNING = "RUNNING"
@@ -27,6 +29,7 @@ class SlurmJob:
     elapsed_time: str
     state: JobState
     command: str
+    end_time: str  # New field for the end time column
 
 @dataclass
 class UserResourceUsage:
@@ -72,7 +75,7 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
         try:
             # Split by pipe character
             parts = line.strip().split('|')
-            if len(parts) < 11:  # We need exactly 11 fields
+            if len(parts) < 12:  # Now expect 12 fields
                 continue
                 
             job_id = int(parts[0])
@@ -97,6 +100,7 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
                     continue
             
             command = parts[10]
+            end_time = parts[11]  # New field
             
             job = SlurmJob(
                 job_id=job_id,
@@ -110,6 +114,7 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
                 elapsed_time=elapsed_time,
                 state=state,
                 command=command,
+                end_time=end_time,
             )
             jobs.append(job)
         except (ValueError, IndexError) as e:
@@ -169,19 +174,37 @@ def get_current_usage_summary(jobs: List[SlurmJob], db_path: str) -> List[Dict]:
     """Get a summary of current resource usage suitable for display in a table."""
     running_jobs = filter_jobs(jobs, states=[JobState.RUNNING])
     usage_by_user = calculate_user_resource_usage(running_jobs, db_path)
-    
+
+    # Calculate total_gpu_hours for each user
+    import re
+    MAX_DURATION = GPU_MAX_HOURS
+    def parse_runtime_to_hours(runtime_str):
+        if not runtime_str:
+            return 0.0
+        match = re.match(r"(?:(\d+)-)?(\d+):(\d+):(\d+)", runtime_str)
+        if not match:
+            return 0.0
+        days, hours, minutes, seconds = match.groups(default="0")
+        total_hours = int(days) * 24 + int(hours) + int(minutes) / 60 + int(seconds) / 3600
+        return total_hours
+
+    user_gpu_hours = defaultdict(float)
+    for job in running_jobs:
+        hours = min(parse_runtime_to_hours(job.elapsed_time), MAX_DURATION)
+        user_gpu_hours[job.user] += job.gpus * hours
     # Convert to list of dicts for easy JSON serialization
     summary = []
     for user, usage in usage_by_user.items():
+
         summary.append({
             'user': user,
             'user_role': usage.user_role,
             'total_cpus': usage.total_cpus,
             'total_memory_gb': round(usage.total_memory_mb / 1024, 2),  # Convert to GB
             'total_gpus': usage.total_gpus,
+            'total_gpu_hours': round(user_gpu_hours[user] / MAX_DURATION, 2),
             'hosts': sorted(list(usage.hosts)) if usage.hosts else ['None assigned']
         })
-        
     return sorted(summary, key=lambda x: x['total_gpus'], reverse=True)  # Sort by GPU usage
 
 def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
@@ -241,12 +264,12 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
             cursor.execute("""
                 INSERT OR REPLACE INTO Jobs (
                     job_id, log_id, user_id, machine_id,
-                    cpus, memory, gpus, runtime, state, command
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    cpus, memory, gpus, runtime, state, command, end_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 job.job_id, log_id, user_id, machine_id,
                 job.cpus, job.memory_mb, job.gpus,
-                job.elapsed_time, job.state.value, job.command
+                job.elapsed_time, job.state.value, job.command, job.end_time
             ))
         
         # Commit transaction

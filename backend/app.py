@@ -19,6 +19,7 @@ from backend.tasks.periodic_tasks import scheduler
 from backend.tasks.example_tasks import log_current_time
 from backend.tasks.calendar_tasks import get_active_calendar_events
 from backend.tasks.check_reservation import check_reservation_activity
+from backend.tasks.check_usage import check_usage_activity
 
 # Create Flask app
 app = Flask(__name__, static_folder=None)
@@ -146,6 +147,10 @@ if __name__ == '__main__':
         # Register and start the reservation check task
         scheduler.add_task("reservation_checker", check_reservation_activity, interval_minutes=4*60)
         print("Registered reservation_checker task (runs every minutes)")
+
+        # Register and start the usage check task
+        scheduler.add_task("usage_checker", check_usage_activity, interval_minutes=4*60)
+        print("Registered usage_checker task (runs every 4 hours)")
         
         # Start the task scheduler
         scheduler.start()

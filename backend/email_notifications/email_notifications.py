@@ -7,7 +7,7 @@ from typing import Optional
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from ..database.schema import get_db_connection
-from ..config import DB_PATH
+from ..config import DB_PATH, PORT
 from .email_config import (
     SMTP_SERVER, SMTP_PORT, EMAIL_SENDER, EMAIL_PASSWORD, 
     EMAIL_DOMAIN, ADMIN_EMAIL, CLUSTER_NAME, MAX_RETRIES, 
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Rate limiting storage (in-memory for simplicity)
 email_rate_limit = {}
+IS_DEBUGGING = (PORT == 5001)
 
 def send_email(user: str, email_type: str = "reservation-not-used", context: str = "") -> bool:
     """
@@ -95,6 +96,11 @@ def send_smtp_email(recipient: str, email_type: str, context: str) -> bool:
     Returns:
         bool: True if email was sent successfully, False otherwise
     """
+
+    if IS_DEBUGGING:
+        logger.info(f"DEBUGGING - Email not sent to {recipient} bc of DEBUGGING")
+        return True
+    
     try:
         # Create message
         msg = MIMEMultipart()
@@ -138,6 +144,8 @@ def get_email_subject(email_type: str) -> str:
         "reservation-not-used": "Cluster Reservation Alert - Underutilized Resources",
         "reservation-expired": "Cluster Reservation Alert - Reservation Expired",
         "reservation-reminder": "Cluster Reservation Reminder",
+        "gpu-usage-high": "Cluster Usage Alert - High GPU Usage",
+        "io-usage-high": "Cluster Usage Alert - High IO Usage",
         "default": "Cluster Usage Notification"
     }
     return subjects.get(email_type, subjects["default"])
@@ -225,6 +233,74 @@ def create_email_body(recipient: str, email_type: str, context: str) -> str:
         </html>
         """
     
+    elif email_type == "gpu-usage-high":
+        return f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .alert {{ background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>{CLUSTER_NAME} - High GPU Usage Alert</h2>
+                    <p>Hello {recipient},</p>
+                </div>
+                <div class="alert">
+                    <h3>🚨 High GPU Usage Detected</h3>
+                    <p>Your total GPU usage has exceeded the configured threshold.</p>
+                </div>
+                <div class="details">
+                    <h4>Usage Details:</h4>
+                    <p>{context}</p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated notification from the {CLUSTER_NAME} monitoring system.</p>
+                    <p>If you have any questions, please contact: <a href="mailto:{ADMIN_EMAIL}">{ADMIN_EMAIL}</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+    elif email_type == "io-usage-high":
+        return f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .alert {{ background-color: #fceabb; border: 1px solid #f8d347; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>{CLUSTER_NAME} - High IO Usage Alert</h2>
+                    <p>Hello {recipient},</p>
+                </div>
+                <div class="alert">
+                    <h3>🚨 High IO Usage Detected</h3>
+                    <p>Your total IO operations have exceeded the configured threshold.</p>
+                </div>
+                <div class="details">
+                    <h4>Usage Details:</h4>
+                    <p>{context}</p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated notification from the {CLUSTER_NAME} monitoring system.</p>
+                    <p>If you have any questions, please contact: <a href="mailto:{ADMIN_EMAIL}">{ADMIN_EMAIL}</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
     else:
         return f"""
         <html>
