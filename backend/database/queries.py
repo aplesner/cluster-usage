@@ -670,7 +670,6 @@ def parse_runtime_to_hours(runtime_str):
 MAX_DURATION = GPU_MAX_HOURS
 
 def get_historic_usage_per_user(db_path: str, username: str = None):
-    print("GET HISTORIC USAGE IS CALLED ------------------------------------------------------------")
     """
     Get historic GPU usage per user, grouped by machine.
     For completed jobs (with end_time), only count the last GPU_MAX_HOURS of runtime.

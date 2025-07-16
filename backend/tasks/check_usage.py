@@ -72,11 +72,12 @@ def check_usage_activity():
                 for machine, stats in usage_by_user[username].items():
                     gpu_hours += stats.get('total_gpu_hours', 0.0)
 
-            # IO usage: sum across all size ranges
+            # IO usage: use most recent time point
             user_usage = get_user_usage(DB_PATH, username=username)
-            io_ops = 0
-            if user_usage and 'io_distribution' in user_usage:
-                io_ops = sum(item.get('total_operations', 0) for item in user_usage['io_distribution'])
+            if user_usage and 'time_series' in user_usage and user_usage['time_series']:
+                io_ops = user_usage['time_series'][-1].get('total_operations', 0)
+            else:
+                io_ops = 0
             # Email if over threshold and no active reservation
             gpu_alert = False
             io_alert = False
