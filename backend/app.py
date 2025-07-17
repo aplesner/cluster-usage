@@ -142,11 +142,11 @@ if __name__ == '__main__':
         print("Registered calendar_checker task (runs every minute)")
         
         # Register and start the reservation check task
-        scheduler.add_task("reservation_checker", check_reservation_activity, interval_minutes=4*60)
+        scheduler.add_task("reservation_checker", check_reservation_activity, interval_minutes=4*60, initial_delay=30)
         print("Registered reservation_checker task (runs every minutes)")
 
         # Register and start the usage check task
-        scheduler.add_task("usage_checker", check_usage_activity, interval_minutes=4*60)
+        scheduler.add_task("usage_checker", check_usage_activity, interval_minutes=4*60, initial_delay=30)
         print("Registered usage_checker task (runs every 4 hours)")
         
         # Start the task scheduler

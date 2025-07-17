@@ -39,14 +39,15 @@ class TaskScheduler:
         finally:
             conn.close()
 
-    def add_task(self, name, func, interval_minutes):
-        """Add a periodic task to the scheduler"""
+    def add_task(self, name, func, interval_minutes, initial_delay=0):
+        """Add a periodic task to the scheduler, with optional initial delay in seconds"""
+        current_time = time.time()
         self.tasks[name] = {
             'func': func,
             'interval': interval_minutes * 60,  # Convert to seconds
-            'last_run': 0
+            'last_run': current_time + initial_delay - (interval_minutes * 60)
         }
-        logger.info(f"Added task '{name}' with interval {interval_minutes} minutes")
+        logger.info(f"Added task '{name}' with interval {interval_minutes} minutes and initial delay {initial_delay} seconds")
 
     def run_task(self, name, task_info):
         """Run a single task and log its execution"""
