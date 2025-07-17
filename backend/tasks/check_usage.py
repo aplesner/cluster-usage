@@ -36,7 +36,7 @@ def user_has_active_reservation(username, gpu_hours):
                             continue
             except Exception:
                 continue
-
+    found_reservation = max(found_reservation, GPU_HOURS_THRESHOLD)
 
     if found_reservation and total_reserved_gpus > 0:
         utilization = gpu_hours / total_reserved_gpus

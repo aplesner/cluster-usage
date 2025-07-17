@@ -204,31 +204,17 @@ def get_active_calendar_events():
 
 @api.route('/calendar/current-usage', methods=['GET'])
 def get_current_usage():
-    """Get current resource usage from Slurm logs"""
+    """Get current resource usage from Slurm logs (now from DB only)"""
     try:
-        log_file = os.path.join(CALENDAR_LOGS_DIR, 'slurm', 'slurm.log')
-        if not os.path.exists(log_file):
-            return jsonify({'error': 'Slurm log file not found'}), 404
-            
-        with open(log_file, 'r') as f:
-            log_content = f.read()
-            
-        # Parse the log file
-        jobs = parse_slurm_log(log_content)
-        
-        # Store jobs in database
         db_path = current_app.config['DB_PATH']
-        print("CURRENTLY TRYING TO STORE JOBS")
-        store_slurm_jobs(jobs, db_path)
-        
-        # Get current usage summary
-        usage_summary = get_current_usage_summary(jobs, db_path)
-        
+        usage_summary = get_current_usage_summary(db_path)
+
+        print("usage summary is") 
+        print(usage_summary)
         return jsonify({
             'timestamp': datetime.now().isoformat(),
             'usage': usage_summary
         })
-        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

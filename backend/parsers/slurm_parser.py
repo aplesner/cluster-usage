@@ -8,6 +8,7 @@ import os
 from flask import jsonify
 from collections import defaultdict
 from backend.config import GPU_MAX_HOURS
+from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
 
 class JobState(Enum):
     RUNNING = "RUNNING"
@@ -139,8 +140,9 @@ def filter_jobs(jobs: List[SlurmJob],
         
     return filtered
 
-def calculate_user_resource_usage(jobs: List[SlurmJob], db_path: str) -> Dict[str, UserResourceUsage]:
+def calculate_user_resource_usage(jobs, db_path: str) -> Dict[str, UserResourceUsage]:
     """Calculate resource usage per user from a list of jobs."""
+   
     usage_by_user: Dict[str, UserResourceUsage] = {}
     
     for job in jobs:
@@ -170,8 +172,16 @@ def calculate_user_resource_usage(jobs: List[SlurmJob], db_path: str) -> Dict[st
             
     return usage_by_user
 
-def get_current_usage_summary(jobs: List[SlurmJob], db_path: str) -> List[Dict]:
+def get_current_usage_summary(db_path: str) -> List[Dict]:
     """Get a summary of current resource usage suitable for display in a table."""
+    
+    print("CURRENT USAGE SUMMARY")
+    
+    log_file = os.path.join(CALENDAR_LOGS_DIR, 'slurm', 'slurm.log')
+    with open(log_file, 'r') as f:
+        log_content = f.read()
+    jobs = parse_slurm_log(log_content)
+
     running_jobs = filter_jobs(jobs, states=[JobState.RUNNING])
     usage_by_user = calculate_user_resource_usage(running_jobs, db_path)
 
@@ -194,6 +204,7 @@ def get_current_usage_summary(jobs: List[SlurmJob], db_path: str) -> List[Dict]:
         user_gpu_hours[job.user] += job.gpus * hours
     # Convert to list of dicts for easy JSON serialization
     summary = []
+    print("BEFORE SUMMARY")
     for user, usage in usage_by_user.items():
 
         summary.append({
@@ -205,6 +216,8 @@ def get_current_usage_summary(jobs: List[SlurmJob], db_path: str) -> List[Dict]:
             'total_gpu_hours': round(user_gpu_hours[user] / MAX_DURATION, 2),
             'hosts': sorted(list(usage.hosts)) if usage.hosts else ['None assigned']
         })
+    print("summary")
+    print(summary)
     return sorted(summary, key=lambda x: x['total_gpus'], reverse=True)  # Sort by GPU usage
 
 def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:

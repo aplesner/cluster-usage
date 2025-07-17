@@ -8,7 +8,6 @@ from dataclasses import dataclass
 import re
 
 from ..database.schema import get_db_connection
-from ..parsers.slurm_parser import get_current_usage_summary, parse_slurm_log
 from .calendar_tasks import get_active_calendar_events, CALENDAR_LOGS_DIR
 from ..config import DB_PATH, HOST, PORT
 from ..email_notifications import send_email
@@ -46,17 +45,7 @@ def check_reservation_activity():
         
         if not active_reservations:
             return {"status": "success", "message": "No active reservations found"}
-        
-        # Get current cluster usage and ensure Slurm data is parsed
-        slurm_log_file = os.path.join(CALENDAR_LOGS_DIR, 'slurm', 'slurm.log')
-        if not os.path.exists(slurm_log_file):
-            return {"error": "Slurm log file not found"}
-            
-        with open(slurm_log_file, 'r') as f:
-            log_content = f.read()
-        jobs = parse_slurm_log(log_content)
-        
-        
+               
         # Check each reservation
         reservation_activities = []
         for reservation in active_reservations:
