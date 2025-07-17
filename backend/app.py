@@ -133,9 +133,7 @@ if __name__ == '__main__':
         archive_dir = ARCHIVE_LOGS_DIR if args.archive else None
         process_specific_log(args.file, archive_dir)
     elif args.action == 'run':
-        if not os.path.exists(DB_PATH):
-            print(f"Database not found at {DB_PATH}. Initializing...")
-            init_database()
+        init_database()  # Always ensure schema is up-to-date
         
         
         DELAY = 120 
