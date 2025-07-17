@@ -209,8 +209,6 @@ def get_current_usage():
         db_path = current_app.config['DB_PATH']
         usage_summary = get_current_usage_summary(db_path)
 
-        print("usage summary is") 
-        print(usage_summary)
         return jsonify({
             'timestamp': datetime.now().isoformat(),
             'usage': usage_summary

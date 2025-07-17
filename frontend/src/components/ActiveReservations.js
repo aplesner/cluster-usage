@@ -48,6 +48,18 @@ function ActiveReservations() {
         return 'badge';
     };
 
+    // Helper to check if a reservation is tikgpuX only
+    const isTikgpuXReservation = (reservation) => {
+        if (!reservation.resources || reservation.resources.length === 0) return false;
+        // True if all resources are tikgpuX (case-insensitive)
+        return reservation.resources.every(([_, resource]) =>
+            typeof resource === 'string' && resource.trim().toLowerCase() === 'tikgpux'
+        );
+    };
+    // Split reservations
+    const tikgpuXReservations = reservations.filter(isTikgpuXReservation);
+    const nonTikgpuXReservations = reservations.filter(r => !isTikgpuXReservation(r));
+
     if (loading) return <LoadingSpinner />;
     if (error) return <ErrorMessage message={error} />;
 
@@ -65,40 +77,94 @@ function ActiveReservations() {
             </div>
 
             <h2>Active Reservations</h2>
-            {reservations.length === 0 ? (
-                <p>No active reservations at the moment.</p>
-            ) : (
-                <div className="reservations-list">
-                    {reservations.map((reservation, index) => (
-                        <div key={index} className="reservation-card">
-                            <div className="user-header">
-                                <div className="user-info">
-                                    <span className="username">{reservation.username}</span>
-                                    {reservation.user_role && (
-                                        <span className={getRoleBadgeClass(reservation.user_role)}>
-                                            {reservation.user_role}
-                                        </span>
-                                    )}
+
+            {/* Red Box: Do not use these reserved resources */}
+            {nonTikgpuXReservations.length > 0 ? (
+                <div className="rule-box" style={{ marginTop: '1rem' }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                        These resources are reserved for the users below. Please do not use them during the reservation period.
+                    </div>
+                    <div className="reservations-list">
+                        {nonTikgpuXReservations.map((reservation, index) => (
+                            <div key={index} className="reservation-card">
+                                <div className="user-header">
+                                    <div className="user-info">
+                                        <span className="username">{reservation.username}</span>
+                                        {reservation.user_role && (
+                                            <span className={getRoleBadgeClass(reservation.user_role)}>
+                                                {reservation.user_role}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Link to={`/users/${reservation.username}`} className="btn btn-sm">
+                                        Visit User
+                                    </Link>
                                 </div>
-                                <Link to={`/users/${reservation.username}`} className="btn btn-sm">
-                                    Visit User
-                                </Link>
+                                <div className="duration">{reservation.duration}</div>
+                                <div className="resources-tags">
+                                    {reservation.resources.map(([num, resource], idx) => (
+                                        <span key={idx} className="resource-tag">
+                                            {num}x {resource}
+                                        </span>
+                                    ))}
+                                </div>
+                                {reservation.comment && (
+                                    <div className="comment">{reservation.comment}</div>
+                                )}
                             </div>
-                            <div className="duration">{reservation.duration}</div>
-                            <div className="resources-tags">
-                                {reservation.resources.map(([num, resource], idx) => (
-                                    <span key={idx} className="resource-tag">
-                                        {num}x {resource}
-                                    </span>
-                                ))}
-                            </div>
-                            {reservation.comment && (
-                                <div className="comment">{reservation.comment}</div>
-                            )}
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="empty-box" style={{ marginTop: '1rem' }}>
+                    No active reservations.
                 </div>
             )}
+
+            <h2>Announcements</h2>
+            {/* Blue Box: Announcements */}
+            {tikgpuXReservations.length > 0 ? (
+                <div className="info-box" style={{ marginTop: '1rem' }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                        These users are allowed to use more than the 4 GPUs, but you do not need to check that the resources are available (they are not reserved)
+                    </div>
+                    <div className="reservations-list" style={{ marginTop: '1rem' }}>
+                        {tikgpuXReservations.map((reservation, index) => (
+                            <div key={index} className="reservation-card">
+                                <div className="user-header">
+                                    <div className="user-info">
+                                        <span className="username">{reservation.username}</span>
+                                        {reservation.user_role && (
+                                            <span className={getRoleBadgeClass(reservation.user_role)}>
+                                                {reservation.user_role}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Link to={`/users/${reservation.username}`} className="btn btn-sm">
+                                        Visit User
+                                    </Link>
+                                </div>
+                                <div className="duration">{reservation.duration}</div>
+                                <div className="resources-tags">
+                                    {reservation.resources.map(([num, resource], idx) => (
+                                        <span key={idx} className="resource-tag">
+                                            {num}x {resource}
+                                        </span>
+                                    ))}
+                                </div>
+                                {reservation.comment && (
+                                    <div className="comment">{reservation.comment}</div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="empty-box" style={{ marginTop: '1rem' }}>
+                    No active announcements.
+                </div>
+            )}
+
             {unparsed.length > 0 && (
                 <div className="unparsed-reservations">
                     <h3>Unparsed Reservations</h3>

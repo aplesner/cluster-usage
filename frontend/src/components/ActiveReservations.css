@@ -153,4 +153,15 @@
     border: 1px solid #e74c3c;
     border-radius: 4px;
     background-color: #fde8e8;
+}
+
+.empty-box {
+    background: #f4f4f4;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    font-size: 1.05em;
+    text-align: center;
 } 

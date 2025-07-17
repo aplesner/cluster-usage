@@ -66,6 +66,7 @@ def check_reservation_activity():
             for resource_name, reserved_amount in reservation_resources.items():
                 # Special handling for tikgpuX or tikgpux resources
                 if re.match(r"tikgpu[xX]$", resource_name, re.IGNORECASE):
+                    continue
                     # Sum all GPUs in use by the user
                     actual_amount = sum(current_user_usage_by_host.values())
                     #print("actual amount", actual_amount, username)
