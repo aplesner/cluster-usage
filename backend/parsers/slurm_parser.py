@@ -174,9 +174,7 @@ def calculate_user_resource_usage(jobs, db_path: str) -> Dict[str, UserResourceU
 
 def get_current_usage_summary(db_path: str) -> List[Dict]:
     """Get a summary of current resource usage suitable for display in a table."""
-    
-    print("CURRENT USAGE SUMMARY")
-    
+       
     log_file = os.path.join(CALENDAR_LOGS_DIR, 'slurm', 'slurm.log')
     with open(log_file, 'r') as f:
         log_content = f.read()
@@ -204,7 +202,6 @@ def get_current_usage_summary(db_path: str) -> List[Dict]:
         user_gpu_hours[job.user] += job.gpus * hours
     # Convert to list of dicts for easy JSON serialization
     summary = []
-    print("BEFORE SUMMARY")
     for user, usage in usage_by_user.items():
 
         summary.append({
@@ -216,8 +213,6 @@ def get_current_usage_summary(db_path: str) -> List[Dict]:
             'total_gpu_hours': round(user_gpu_hours[user] / MAX_DURATION, 2),
             'hosts': sorted(list(usage.hosts)) if usage.hosts else ['None assigned']
         })
-    print("summary")
-    print(summary)
     return sorted(summary, key=lambda x: x['total_gpus'], reverse=True)  # Sort by GPU usage
 
 def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
