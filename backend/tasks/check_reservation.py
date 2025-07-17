@@ -79,6 +79,8 @@ def check_reservation_activity():
                 if re.match(r"tikgpu[xX]$", resource_name, re.IGNORECASE):
                     # Sum all GPUs in use by the user
                     actual_amount = sum(current_user_usage_by_host.values())
+                    #print("actual amount", actual_amount, username)
+                    #print(current_user_usage_by_host)
                 else:
                     # Default: usage for this specific host/resource
                     actual_amount = current_user_usage_by_host.get(resource_name, 0)

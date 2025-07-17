@@ -136,9 +136,6 @@ if __name__ == '__main__':
             print(f"Database not found at {DB_PATH}. Initializing...")
             init_database()
         
-        # Register and start the example task
-        scheduler.add_task("time_logger", log_current_time, interval_minutes=4*60)
-        print("Registered time_logger task (runs every minute)")
         
         # Register and start the calendar task
         scheduler.add_task("calendar_checker", get_active_calendar_events, interval_minutes=10)
