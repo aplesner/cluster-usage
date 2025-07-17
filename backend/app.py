@@ -160,7 +160,7 @@ if __name__ == '__main__':
         
         # Start the task scheduler
         scheduler.start()
-        
+        print("lets start this party")
         try:
             app.run(host=HOST, port=PORT, debug=DEBUG)
         finally:
