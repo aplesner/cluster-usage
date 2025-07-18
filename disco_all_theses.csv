@@ -1,38 +1,42 @@
 title,icon_url,supervisors,semester,student_names,student_emails,is_past
+Homo Moralis Plays a Game,//tik-db.ee.ethz.ch/file/a2a192a7657e64c0d01a51063927c3c5/meme_moral.jpg,dberriaud,HS 25,Pirmin Ballmer,pballmer@ethz.ch,False
+Automated Foosball Commentary,//tik-db.ee.ethz.ch/file/76b82c0a1237626a356eb9e29d3aa876/vector-design-foosball-table-icon-style_822882-64623.png,"taczel, jmathys",HS 25,Victor Willems,vwillems@ethz.ch,False
+Cool-chic,//tik-db.ee.ethz.ch/file/1139ce6bea961377d54877e2877db2a3/compression_icon.png,taczel,HS 25,Jakub Parada,jparada@student.ethz.ch,False
+Exploring normalized transformers,//tik-db.ee.ethz.ch/file/2944295bc4ec1fc7272189df631b6746/llm-brain.png,"aplesner, taczel",HS 25,Shakir Yousefi,syousefi@ethz.ch,False
+Integrating AI Agents with Blockchain Gaming Economies,//tik-db.ee.ethz.ch/file/fc8a9ef3c091e3867dcd196c574fcdaf/thesis.png,fgroetschla,HS 25,Samuel Huber,samuhuber@ethz.ch,False
+SAT Solving with Graph Neural Networks,//tik-db.ee.ethz.ch/file/02bb883ffe56baa20d9052417217657f/NBMetadataCache.jpeg,"speltonen, jmathys",HS 25,Frederik van der Brugge,fvanderb@ethz.ch,False
 Eigenvector-Masked Autoencoders,//tik-db.ee.ethz.ch/file/f387fa3c8c05b118789f2ee680df6125/autoencoder-logo.png,"taczel, aplesner",FS 25,Anja Buchmann,abuchmann@ethz.ch,False
 Aggregation in Team Games,//tik-db.ee.ethz.ch/file/b706ca8497827bc461c589d6240ff02e/murray_me2_resized.jpg,"aconstantine, bosimic",FS 25,Hadjipanayiotou Georgia,ghadjipan@ethz.ch,False
 AlphaZero Meets ARC,//tik-db.ee.ethz.ch/file/a4d8e76a063bed51e9dbcea9b6690d79,"aplesner, besterma",FS 25,David Jenny,davjenny@student.ethz.ch,False
 ARC Literature Review,//tik-db.ee.ethz.ch/file/cd5763a0c18ba6049bada6a06b29a382/ARC_icon.png,aplesner,FS 25,Severin Bratus,sbratus@student.ethz.ch,False
 Asynchronous Graph Neural Network Models,//tik-db.ee.ethz.ch/file/5f9d41831d2b43f859b95d1b00a3f02c/asynchrony.png,fgroetschla,FS 25,Tim Krappel,tkrappel@student.ethz.ch,False
-Audio Upmixing,//tik-db.ee.ethz.ch/file/fd703977590c6624a0e2cbe768c1da27/music_icon1.png,"lucala, fgroetschla",FS 25,Hyun-Min Chang,changh@student.ethz.ch,False
 Beatmaker,//tik-db.ee.ethz.ch/file/da2dbfdaec0d0d3590e55f1720512641/music_icon.png,"lucala, fgroetschla",FS 25,Karim Galal,kg1606@gmail.com,False
+Bounds on the Coding Gap for Broadcast,//tik-db.ee.ethz.ch/file/bf0639794071a6d5044b39560e3655c0/image_small2.png,"aparamonov, aconstantine",FS 25,Natalie Suter,nasuter@ethz.ch,False
 Context-Aware In- Car Recommender System: Predicting UI Interactions (User Needs) with Driving Context,//tik-db.ee.ethz.ch/file/d2c1545a60c30dc61a8a8dacd8cee315/porsche.jpg,aplesner,FS 25,Andri Furrer,andfurrer@ethz.ch,False
 Contrastive Decoding,//tik-db.ee.ethz.ch/file/4c1183616e823a2dca5fbd2aeb2be358/llm_icon.jpeg,"lucala, fberdoz",FS 25,René Cáky,rene.caky@gmail.com,False
-Creating the Next Decentralized Computer,//tik-db.ee.ethz.ch/file/5c22f3c631f0eb35ecc3504daff052fa/output-onlinepngtools_min.png,"aparamonov, yvonlanthen",FS 25,Cedric Schwyter,cschwyter@student.ethz.ch,False
 Data Attribution,//tik-db.ee.ethz.ch/file/93cb5c9b8d4165b1017ad9f70de80aee/attribution_fig.png,"lucala, fberdoz",FS 25,Kaan Bayraktar,kbayraktar@student.ethz.ch,False
-Deep Differentiable Logic Gate Networks: Neuron Collapse Through a Neural Architecture Search Perspective,//tik-db.ee.ethz.ch/file/32b20d33765df47a47fc176a3e1f961f/difflogic.png,"aplesner, taczel",FS 25,Shakir Yousefi,syousefi@ethz.ch,False
 Designing the Next ARC Challenge,//tik-db.ee.ethz.ch/file/b2d73be97ecc82ba1506c5a443033e2f/ARC_icon.png,"speltonen, aplesner",FS 25,August Rønberg,august.b.ronberg@gmail.com,False
 DiffLogic - Recurrent Networks,//tik-db.ee.ethz.ch/file/72d26b9f117a5a3faf422f46766b4b11/difflogic.png,"taczel, aplesner",FS 25,Simon Bührer,simon.buehrer26@gmail.com,False
+Distributed Graph Problems with Malicious Actors,//tik-db.ee.ethz.ch/file/f35876e18a79fb8f4d0bcc90440a2175/1687969600753.jpeg,"aparamonov, yvonlanthen",FS 25,Lucas Weitzendorf,lweitzendorf@ethz.ch,False
 Effectiveness of Multi-Scale Aggregation for Adversarial Robustness,//tik-db.ee.ethz.ch/file/ee6c741114decfdca6cc980fe0966ee6/png-clipart-logo-computer-icons-white-hat-hacker-icon-hat-trademark.png,"aplesner, taczel",FS 25,Emerson Leonardo Azevedo Aguiar,eazevedo@student.ethz.ch,False
 Empirical Analysis of Blockchain Payment Systems,//tik-db.ee.ethz.ch/file/b95553363be61ebde9b2c2cdf2329b4c/p2p.png,"speltonen, hlioba",FS 25,Daniel Hunziker,dhunzike@student.ethz.ch,False
 Enhancing AlphaZero with Neural Message Passing,//tik-db.ee.ethz.ch/file/1c0c85d655dd8752e799aeaa383c817c/tree_of_thoughts.jpeg,"sdauncey, speltonen",FS 25,Pacurar Andrei-Horia,hpacurar@student.ethz.ch,False
 Evaluating AI-Generated Image Detection Across Resolution and Complexity,//tik-db.ee.ethz.ch/file/a0163f9b0c13595bd97b50134cb7e484/asdasd.png,"taczel, aplesner",FS 25,Lorenzo Alessandro Vettor,lvettor@student.ethz.ch,False
 Evaluating and Controlling the Political Bias of LLMs,//tik-db.ee.ethz.ch/file/33552c1f9edf7b2723f49dff14f9755f/aiXpolitics.png,fberdoz,FS 25,Johanna Dciofalo,jdciofalo@ethz.ch,False
 Exploring adversarial concepts,//tik-db.ee.ethz.ch/file/e724931c6588b917f5f60c0f6a8d7f21/noise.png,aplesner,FS 25,Nastasia Morel,nmorel@student.ethz.ch,False
+Fair Playing Sequences,//tik-db.ee.ethz.ch/file/afd2b7b4b82a318da11c3614b9f9e4f2/th.jpeg,"dberriaud, aconstantine",FS 25,Julia Hütte,ju.huette@gmail.com,False
 Fake Singing Voice Detection,//tik-db.ee.ethz.ch/file/6f2d090d16fe7dcf45c06ff2386e29aa/music_icon.png,"lucala, fgroetschla",FS 25,Ahmet Solak,ahmet.solak.b@gmail.com,False
 Faster DiffLogic,//tik-db.ee.ethz.ch/file/b70eb52442d8ed26bfee26b753c4cb12/difflogic.png,"aplesner, taczel",FS 25,Joshua Durrant,jdurrant@student.ethz.ch,False
 Graph Autoencoder,//tik-db.ee.ethz.ch/file/3e16bd38a82f0ecaebb51284131a1fa1/artsy-GAE.jpg,"fgroetschla, speltonen",FS 25,Anisha Mohamed Sahabdeen,amohame@student.ethz.ch,False
 Image-to-Prompt,//tik-db.ee.ethz.ch/file/1a5846f6d562253e3f57e2b333c56778/hf_icon.png,"fberdoz, lucala",FS 25,Asonitis Antonios-Spyridon,andonis.asonitis@gmail.com,False
 Impact of Training Data on Adversarial Examples,//tik-db.ee.ethz.ch/file/d480a80b0dcad9e40d25bc215a467abf/png-clipart-logo-computer-icons-white-hat-hacker-icon-hat-trademark.png,"aplesner, taczel",FS 25,Marco Zimmerli,mzimmerli@student.ethz.ch,False
-Increasing Expressiveness of DiffLogic,//tik-db.ee.ethz.ch/file/a5d209d572bfce272d563df6a78c6d0e/difflogic.png,"aplesner, taczel",FS 25,Sven Brändle,sbraendle@student.ethz.ch,False
+Improving convergence of DiffLogic,//tik-db.ee.ethz.ch/file/cc719071f4ed7c8162c9076036a0dcd8/difflogic.png,"taczel, aplesner",FS 25,Lukas Rüttgers,lruettgers@ethz.ch,False
 Interpreting the Reversal Curse of LLMs,//tik-db.ee.ethz.ch/file/652e8efe533a10d83fd1fb13f7b00056/reversal.jpg,sdauncey,FS 25,Giovan Battista Landolina,glandolina@ethz.ch,False
 IQ of VLMs – can they really reason?,//tik-db.ee.ethz.ch/file/670cb52127036dc322bb7bef64885fa4/llm-brain.png,"aplesner, fberdoz",FS 25,Elias Hug,elihug@student.ethz.ch,False
-LLM Sampling Methods,//tik-db.ee.ethz.ch/file/b8b549f8e27f153986803057c9a5cd3f/llm-brain.png,"fberdoz, aplesner",FS 25,Hugo Posada Saiz,hugopsvp@gmail.com,False
 Mesh Optimization and Neural Closure Modeling Using Graph Neural Networks,//tik-db.ee.ethz.ch/file/e93f31a86089ed22a0828c4fbc9bfae8/thesis.png,"fgroetschla, jmathys",FS 25,Bálint László Szarvas,bszarvas@student.ethz.ch,False
 MEV on Solana,/img/logo_faded.jpg,hlioba,FS 25,Albin Mamuti,albin-mamuti@hotmail.com,False
 ML for Fashion,//tik-db.ee.ethz.ch/file/0959882fd6eec752ffcba0d332d258e0/fashion.png,"lucala, taczel",FS 25,Yannick Hauri,yhauri@ethz.ch,False
 More Efficient Transformers with high-level multi-token prediction,//tik-db.ee.ethz.ch/file/69a28f1da089c55abc1340845e633f1a/thumbnail.png,"fberdoz, besterma",FS 25,Peer Rheinboldt,prheinboldt@student.ethz.ch,False
-Multi-Lingual Text-to-Speech Dataset,//tik-db.ee.ethz.ch/file/c2b907fb13105059488dcd0822f4e9ad/hf_icon.png,"lucala, fgroetschla",FS 25,Samuel Pfisterer,spfisterer@student.ethz.ch,False
 Multimodal Graph-Language Models,//tik-db.ee.ethz.ch/file/8e8ef827be2584d98caabcb7a02b7759/gnn_llm.png,"fgroetschla, speltonen",FS 25,Simon Schlude,sschlude@student.ethz.ch,False
 NeRF to evaluate Robustness,//tik-db.ee.ethz.ch/file/fc4db904b76565a0d50c811980de8df7/white-hat-hacker.png,"aplesner, taczel",FS 25,Samuel Räber,sraeber@student.ethz.ch,False
 Neural Amp modelling,//tik-db.ee.ethz.ch/file/0f0ecb71f8c5e1549b002fc1d604d5e2/music_icon.png,"fgroetschla, lucala",FS 25,Longxiang Jiao,longxjiao@gmail.com,False
@@ -40,17 +44,16 @@ Ranking Movies with LLMs,//tik-db.ee.ethz.ch/file/70e94664f7dfadb5418ee6d6838c38
 Reasoning Benchmark for LLMs,//tik-db.ee.ethz.ch/file/ea39a7828be18114f5dfe623a64f4156/Gemini_Generated_Image_ou9cg2ou9cg2ou9c.jpg,"besterma, lucala",FS 25,Fabian Farestam,ffarestam@student.ethz.ch,False
 Recopmression,//tik-db.ee.ethz.ch/file/159b1426ead21a9ca95a7b45e4cbdbba/images.png,taczel,FS 25,Elif Özsoy,oozsoy.eliff@gmail.com,False
 Robust Multi-lingual Speaker Diarization,//tik-db.ee.ethz.ch/file/d160f1cba59599f4a5fbd20bab36e64b/hf_icon.png,"lucala, fgroetschla",FS 25,Constantin Pinkl,cpinkl@student.ethz.ch,False
+Room Impulse Response using GNNs,//tik-db.ee.ethz.ch/file/fd703977590c6624a0e2cbe768c1da27/music_icon1.png,"lucala, fgroetschla",FS 25,Hyun-Min Chang,changh@student.ethz.ch,False
 RSTAR Meets ARC,//tik-db.ee.ethz.ch/file/c086a11e0b2c413f53c5110062538a08/ARC_icon.png,"aplesner, besterma",FS 25,Pierre Roth,pierre.roth@inf.ethz.ch,False
 Sample Efficiency in Text Diffusion Pretraining,/img/logo_faded.jpg,sdauncey,FS 25,Ahmad Fraij,afraij@ethz.ch,False
 Scalable Proof-of-Personhood,//tik-db.ee.ethz.ch/file/c2a592bb7acca92f969f862278e45891/4829720-168912762-Photoroom.png,yvonlanthen,FS 25,Jan Boog,jaboog@ethz.ch,False
 Scalar Quantization for Audio Compression,//tik-db.ee.ethz.ch/file/37628ba3a009454cc6cfa3591f1ae78d/music_icon.png,"taczel, lucala",FS 25,Fei Gao,fei.gao@uzh.ch,False
+Scaling laws for test-time compute with SID.ai,//tik-db.ee.ethz.ch/file/d2e6c2da6b4b798d54cfb7a9697f58ce/kaplan_scaling_fig2.png,sdauncey,FS 25,Jonathan Manz,manzjo@student.ethz.ch,False
 Simulating Democracy through LLM Agents,//tik-db.ee.ethz.ch/file/6d588e4f55a69a63eccdb9c69e4985a5/government-building-ai-artificial-intelligence-blue-icon-vector-737338612.jpg,"fberdoz, yvonlanthen",FS 25,Yann Billeter,ybilleter@student.ethz.ch,False
 Speech Dataset Pipeline,//tik-db.ee.ethz.ch/file/ec032fd4e6c69f632b37f5b4b4c087a6/hf_icon.png,"lucala, fgroetschla",FS 25,Cesare Blaser,ceblaser@student.ethz.ch,False
 Synthetic Data as a Data Augmentation,/img/logo_faded.jpg,"aplesner, taczel",FS 25,Lars Ruschak,lruschak@ethz.ch,False
-Text-to-Scene,//tik-db.ee.ethz.ch/file/57359aaea78f4d5d4fb5b8e636ac771e/hf_icon.png,"lucala, fberdoz",FS 25,Nick Tuninga,nick@tuninga.com,False
-Video-to-Audio Generation,//tik-db.ee.ethz.ch/file/3e2606ef503c75b34d1414d515248042/music_icon.png,"lucala, fgroetschla",FS 25,Amir Dellali,dellalia@student.ethz.ch,False
-Abstract Reasoning Corpus (ARC) Challenge,//tik-db.ee.ethz.ch/file/23faaa3e71ea23d3b8ad71c896e13fca/arc.png,fberdoz,HS 24,Leo Neubecker,leoneu@student.ethz.ch,False
-Audio Editing,//tik-db.ee.ethz.ch/file/a7bbf2c21cc18ab7ccc9db7f0783f548/music_icon.png,"lucala, fgroetschla",HS 24,Michael Ungersböck,mungersboeck@ethz.ch,False
+Vertical Test Time Compute in Transformers,//tik-db.ee.ethz.ch/file/eda2c4616eee2c3ef8588385df4820d2/up_arrow.jpg,"sdauncey, fberdoz",FS 25,Shiduo Shiduo Xin,mtcxnbss@gmail.com,False
 Audio Watermarking,//tik-db.ee.ethz.ch/file/e47fd9154554657af80f55fea1e55220/music_icon.png,"lucala, fgroetschla",HS 24,Kyle Fearne,kfearne@ethz.ch,False
 Chaos Testing Blockchain Networks: Simulating Real-World Failures,//tik-db.ee.ethz.ch/file/2c1ecfd6e7b3e2879e13f643cb7773e2/absolute-chaos-icon-outline-illustration-vector-262161670.jpg,yvonlanthen,HS 24,Ludovic Burnier,ludovic.burnier@chainsecurity.com,False
 DAO Governance Aggregation,/img/logo_faded.jpg,agervais,HS 24,Mattia Pepin Taiana,mattiapepin.taiana@inf.ethz.ch,False
@@ -58,44 +61,53 @@ DeepEye: Benchmarking & Generalization,//tik-db.ee.ethz.ch/file/3f912c028cdc9448
 DeepEye: Benchmarking Platform,//tik-db.ee.ethz.ch/file/6e5dc47fd4e2db49afc751ca140efc26/eeg-eye.png,kard,HS 24,Yun-Chiang Feng,alex.feng.official@gmail.com,False
 Egocentric Action Recognition,//tik-db.ee.ethz.ch/file/b6a9d2cb264690508852cbdc96ab6f04/test2.jpg,kard,HS 24,Marco Calzavara,mcalzavara@student.ethz.ch,False
 Foundation Models for Decoding Brain Activity - Benchmarking,//tik-db.ee.ethz.ch/file/cea5358e124cdf8b7d4cd8e2f1917021/algo3.jpeg,kard,HS 24,Josua Bürki,jbuerki@ethz.ch,False
-Foundation Models for Decoding Brain Activity - Models,/img/logo_faded.jpg,kard,HS 24,Jonas Lauer,jlauer@student.ethz.ch,False
 Giving ChatGPT a Virtual Body,//tik-db.ee.ethz.ch/file/75fcd85097f1215e12bbdbf0c9b29acc/minutes.png,kard,HS 24,Han Xi,hxi@ethz.ch,False
-Layer-2s and MEV,//tik-db.ee.ethz.ch/file/361a988b8491e7e7e9fd5c65dec00214/output-onlinepngtools(7).png,"hlioba, yvonlanthen",HS 24,Ozan Solmaz,osolmaz@student.ethz.ch,False
 Multi-modal Contrastive Learning for Emotion Recognition,//tik-db.ee.ethz.ch/file/5b3c0b5468542b4a2db0b21adbbb0313/emotion.png,kard,HS 24,Dong Chu,chudongcd@hotmail.com,False
 Neural Fluid Simulation with GNNs,//tik-db.ee.ethz.ch/file/7df5cbe8a4fad37cc440261cf6546bdb/fluid.jpg,"jmathys, fgroetschla",HS 24,Segui Ugalde Aleix,asegui@student.ethz.ch,False
-Optimizing Encoding Speed for Image Compression,//tik-db.ee.ethz.ch/file/97c66e9162359dd0f4f96eb732600863/compression_icon.png,taczel,HS 24,Josep Borrell Tatche,borrellpep@gmail.com,False
 Optimizing Inventory Management,//tik-db.ee.ethz.ch/file/86e8b20cef5815dfc185ea7ff2554bf1/inventory_optimization.png,"aplesner, besterma",HS 24,Tankred Imiolczyk,timiolczyk@student.ethz.ch,False
-SAT Solving with Graph Neural Networks,//tik-db.ee.ethz.ch/file/5b9aa5e8e487d0ecc451e4e3292477ac/nphard-art.jpeg,"speltonen, jmathys",HS 24,Jeremy Gleixner,jgleixner@student.ethz.ch,False
-Stability of Adversarial Examples,//tik-db.ee.ethz.ch/file/4c2159c76f972c4c549ad4829fa31a44/nematode_082.png,aplesner,HS 24,Florian Rupp,flrupp@students.ethz.ch,False
-Stock Market Prediction,//tik-db.ee.ethz.ch/file/089ac0e1bcbec3e67e5dcb0ef1c2174c/agent_based.png,"jmathys, edelacour",HS 24,Simon Wachter,siwachte@ethz.ch,False
-View-Specific Video Compression,//tik-db.ee.ethz.ch/file/f0bdbc319be2057a355c11f4800f7fa7/cctv-camera-icon-free-vector.jpg,taczel,HS 24,Sven Steffen,steffens@student.ethz.ch,False
-Volatility Forecasting and Regime Detection for Options Trading,//tik-db.ee.ethz.ch/file/1c567bc477853e4c4a4032f608a532b3/volatility.png,"fberdoz, edelacour",HS 24,Pierre Dorge,pierre.dorge@hotmail.fr,False
 Game Theory for Games: Algorithms and Axioms,//tik-db.ee.ethz.ch/file/ba3d2ac772723a321a0abe5727302be5/game_theory_for_games_pic.jpg,aconstantine,FS 24,Mihail Lavric,mlavric64@gmail.com,False
-Karma Economics,//tik-db.ee.ethz.ch/file/b25e42594d17afe0345ed33e441f7e04/karma_meme.png,dberriaud,FS 24,Cécile Michel,ccyl.michel@gmail.com,False
 Learning from Demonstrations,//tik-db.ee.ethz.ch/file/b013bd067c168609fd74793d2e752b69/mcb-3-2581250529.jpeg,besterma,FS 24,Jonas Pai,axe-dean0d@icloud.com,False
 Puzzle solving with Graph Neural Networks,//tik-db.ee.ethz.ch/file/cd7325f1e59c2d5914239ce02e3f6e44/puzzle.jpg,"jmathys, besterma",FS 24,Niccolò Grillo,niccolo.grillo@mail.polimi.it,False
 The Emergence of Two-Party Systems,//tik-db.ee.ethz.ch/file/419917231261038ee23e6c40170c784f/two_party_icon2.png,aconstantine,FS 24,Stefan Malanik,stefanmalanik@gmail.com,False
+Empirical Evidence of the Mangrove State Replication Protocol for Blockchains [confidential],//tik-db.ee.ethz.ch/file/5c22f3c631f0eb35ecc3504daff052fa/output-onlinepngtools_min.png,"aparamonov, yvonlanthen",FS 25,Cedric Schwyter,cschwyter@student.ethz.ch,True
+Deep Differentiable Logic Gate Networks: Neuron Collapse Through a Neural Architecture Search Perspective [confidential],//tik-db.ee.ethz.ch/file/32b20d33765df47a47fc176a3e1f961f/difflogic.png,"aplesner, taczel",FS 25,Shakir Yousefi,syousefi@ethz.ch,True
+Scalability and Expressiveness of the Group-Sum Layer in Differentiable Logic Gate Networks [confidential],//tik-db.ee.ethz.ch/file/a5d209d572bfce272d563df6a78c6d0e/difflogic.png,"aplesner, taczel",FS 25,Sven Brändle,sbraendle@student.ethz.ch,True
+Benchmarking LLM Sampling Strategies [confidential],//tik-db.ee.ethz.ch/file/b8b549f8e27f153986803057c9a5cd3f/llm-brain.png,"fberdoz, aplesner",FS 25,Hugo Posada Saiz,hugopsvp@gmail.com,True
+"To Bid or Not to Bid? The Goods, the Chores and the Karma [confidential]",//tik-db.ee.ethz.ch/file/b25e42594d17afe0345ed33e441f7e04/karma_meme.png,dberriaud,FS 25,Cécile Michel,ccyl.michel@gmail.com,True
+EuroSpeech: A Large-Scale Multilingual Speech Corpus from Parliamentary Recordings via Scalable Open-Source Pipelines [confidential],//tik-db.ee.ethz.ch/file/c2b907fb13105059488dcd0822f4e9ad/hf_icon.png,"lucala, fgroetschla",FS 25,Samuel Pfisterer,spfisterer@student.ethz.ch,True
+Text-to-Scene using Large Reasoning Models [confidential],//tik-db.ee.ethz.ch/file/57359aaea78f4d5d4fb5b8e636ac771e/hf_icon.png,"lucala, fberdoz",FS 25,Nick Tuninga,nick@tuninga.com,True
+SALSA-V: Shortcut-Augmented Long-form Synchronized Audio from Videos [confidential],//tik-db.ee.ethz.ch/file/3e2606ef503c75b34d1414d515248042/music_icon.png,"lucala, fgroetschla",FS 25,Amir Dellali,dellalia@student.ethz.ch,True
+CAST: Conditional Adaption with Soft Tokens [confidential],//tik-db.ee.ethz.ch/file/23faaa3e71ea23d3b8ad71c896e13fca/arc.png,fberdoz,HS 24,Leo Neubecker,leoneu@student.ethz.ch,True
 Rethinking Adversarial Examples [confidential],//tik-db.ee.ethz.ch/file/4908a66d1d9e34e7ceacf2e913c4a094/aplesner_a_queue_of_humans_and_robots.png,aplesner,HS 24,Yahya Jabary,jabaryyahya@gmail.com,True
 Yield Curve Approximation and Prediction with Recurrent Neural Networks [confidential],//tik-db.ee.ethz.ch/file/dac2253b231da172486ecb7d09ae1748/ai_gen_yield.jpg,aplesner,HS 24,Marko Babovic,mbabovic@student.ethz.ch,True
 Anomaly Detection for Automated Visual Inspection [confidential],/img/logo_faded.jpg,xxx,HS 24,Mateo Diaz-Bone,mateodi@student.ethz.ch,True
 Computing with Asynchronous Cellular Automata [confidential],/img/logo_faded.jpg,"fgroetschla, aplesner",HS 24,Ivan Baburin,ivan.baburin@inf.ethz.ch,True
+Free-form Audio Editing using Natural Language Instructions [confidential],//tik-db.ee.ethz.ch/file/a7bbf2c21cc18ab7ccc9db7f0783f548/music_icon.png,"lucala, fgroetschla",HS 24,Michael Ungersböck,mungersboeck@ethz.ch,True
 Automated Visual Foosball Tracking,//tik-db.ee.ethz.ch/file/b4fdbab63f71f658f17ce1edbf901a84/foosball.jpg,"jmathys, taczel",HS 24,Linus Baumberger,linus.baumberger2@gmail.com,True
 Breaking Image CAPTCHAs and designing a new CAPTCHA  [confidential],//tik-db.ee.ethz.ch/file/43c60347a9e855b40e5b1d48375b7b4f/aplesner_a_queue_of_humans_and_robots.png,aplesner,HS 24,Turlan Kuzhagaliyev,kturlan@student.ethz.ch,True
 Leveraging Pre-Trained LMs for Rapid and Accurate Structure Elucidation from 2D NMR Data [confidential],//tik-db.ee.ethz.ch/file/8f48d2ce0a258ca08462262f8b470d0f/nmr_icon.jpg,"lucala, fgroetschla",HS 24,Susanna Di Vita,susanna.divita.2@gmail.com,True
 An Empirical Analysis of Polymarket [confidential],//tik-db.ee.ethz.ch/file/892f383a987e884cd41050480f52b967/pred.jpg,"hlioba, qkniep",HS 24,Dominique Buob,dbuob29@gmail.com,True
 FastFeedForward Networks in Vision Transformers [confidential],/img/logo_faded.jpg,aplesner,HS 24,Amaru Caceres Arroyo,amaruc@student.ethz.ch,True
+Expressive GNNs for SAT Solving through Substructure Counting,//tik-db.ee.ethz.ch/file/5b9aa5e8e487d0ecc451e4e3292477ac/NBMetadataCache.jpeg,"speltonen, jmathys",HS 24,Jeremy Gleixner,jgleixner@student.ethz.ch,True
+Multi-Task Learning for Segmentation of Clinical EEG Datasets,/img/logo_faded.jpg,kard,HS 24,Jonas Lauer,jlauer@student.ethz.ch,True
 Symbolic Music Generation with Autoregressive Graph Autoencoder [confidential],/img/logo_faded.jpg,"fgroetschla, lucala",HS 24,Ziheng Chi,zihchi@ethz.ch,True
 Human-aligned Compression for Robust Models [confidential],//tik-db.ee.ethz.ch/file/471ec1afd37456dec2c64d00faa2f058/output-onlinepngtools.png,"aplesner, taczel",HS 24,Samuel Räber,sraeber@student.ethz.ch,True
 Kantian Moralists and Altruists [confidential],//tik-db.ee.ethz.ch/file/6a13569df2d1052be9d7885cbb6b503a/meme_moral.jpg,"dberriaud, aconstantine",HS 24,Jari Ettlin,jarettlin@ethz.ch,True
+"Low Fees, High Hopes, Minimal Expectations: Optimistic MEV in the Ethereum Ecosystem [confidential]",//tik-db.ee.ethz.ch/file/361a988b8491e7e7e9fd5c65dec00214/output-onlinepngtools(7).png,"hlioba, yvonlanthen",HS 24,Ozan Solmaz,osolmaz@student.ethz.ch,True
 ACORD: An Expert-Annotated Dataset for Contract Clause Retrieval [confidential],//tik-db.ee.ethz.ch/file/2b734772073dbd29d482533f29f9f288/aplesner_Contract_negotiation_between_a_human_and_a_robot_--v_6_df1e1204-1c72-488d-b7e1-af35f91c,aplesner,HS 24,Steven Wang,wang.steven.h@gmail.com,True
 Homo Moralis Plays the Centipede Game [confidential],//tik-db.ee.ethz.ch/file/08689027390858a0734791d027626ce2/meme_moral.jpg,"dberriaud, aconstantine",HS 24,Murezi Giger,mugiger@ethz.ch,True
 Neural Networks for EEG Data: Compression and Reconstruction Validation [confidential],//tik-db.ee.ethz.ch/file/c2d7dfc60e62417290f68168674fed96/eeg-eye.png,"kard, lucala",HS 24,Riccardo Rigoni,rrigoni@ethz.ch,True
 Self-Supervised Overlap Removal with Graph Neural Networks [confidential],/img/logo_faded.jpg,fgroetschla,HS 24,Jan-Erik Gustafsson,jangus@ethz.ch,True
+Beyond Overfitting: Encoding Shortcuts for Overfitted Image Codecs [confidential],//tik-db.ee.ethz.ch/file/97c66e9162359dd0f4f96eb732600863/compression_icon.png,taczel,HS 24,Josep Borrell Tatche,borrellpep@gmail.com,True
 High-Frequency Cryptocurrency Market Data Analysis for Centralized and Decentralized Exchanges [confidential],//tik-db.ee.ethz.ch/file/7fe6d874848f5e54ecd3b0fa34a6391e/stocks.jpg,lucala,HS 24,Jinfan Chen,georgcjf@gmail.com,True
 Recommender Systems for Politics [confidential],//tik-db.ee.ethz.ch/file/31e6f7c987f2c27314bf68277e9c55db/VAA.png,"fberdoz, yvonlanthen",HS 24,Niklas Pohl,nipohl@student.ethz.ch,True
+Stability of Adversarial Examples [confidential],//tik-db.ee.ethz.ch/file/4c2159c76f972c4c549ad4829fa31a44/nematode_082.png,aplesner,HS 24,Florian Rupp,flrupp@students.ethz.ch,True
+FinGNN: Financial Graph Neural Networks [confidential],//tik-db.ee.ethz.ch/file/089ac0e1bcbec3e67e5dcb0ef1c2174c/agent_based.png,"jmathys, edelacour",HS 24,Simon Wachter,siwachte@ethz.ch,True
 Text-to-Mel: Learning Mel Spectrograms [confidential],//tik-db.ee.ethz.ch/file/48d6ccbffcd66a7ec6be67c3d8882d7a/spectrogram.png,"lucala, fgroetschla",HS 24,Simon Schoen,simon.p.schoen.00@gmail.com,True
 Transfer Learning for Graph-Based Recommendation Systems [confidential],//tik-db.ee.ethz.ch/file/190d9cba2bcd12a314e35fa294296bd6/graph_recsys.png,"fgroetschla, lucala",HS 24,Elia Trachsel,trachsele@student.ethz.ch,True
 Unified Model for EEG-based Eye Tracking [confidential],//tik-db.ee.ethz.ch/file/bea101de9583e1de3b2df8e650156cbc/eeg-eye.png,kard,HS 24,Radim Urban,rurban@student.ethz.ch,True
+View-Specific Video Compression [confidential],//tik-db.ee.ethz.ch/file/f0bdbc319be2057a355c11f4800f7fa7/cctv-camera-icon-free-vector.jpg,taczel,HS 24,Sven Steffen,steffens@student.ethz.ch,True
+Enhanced Volatility Forecasting and Regime Detection for Options Trading Using HAR Models and Spectral Clustering [confidential],//tik-db.ee.ethz.ch/file/1c567bc477853e4c4a4032f608a532b3/volatility.png,"fberdoz, edelacour",HS 24,Pierre Dorge,pierre.dorge@hotmail.fr,True
 An Axiomatic Analysis of Partition Elections [confidential],//tik-db.ee.ethz.ch/file/2571bc50660659373f01e6e0da80e6e1/murray_me2_resized.jpg,aconstantine,HS 24,Ramon Wick,rawick@ethz.ch,True
 Wave Function Collapse for Graph Generation [confidential],//tik-db.ee.ethz.ch/file/4a5070f722e1daddd389d4a3eddc0324/icon.png,"taczel, jmathys",HS 24,Soufiane Barrada,sbarrada@student.ethz.ch,True
 Exploit Detection in the Evolution of DApps,//tik-db.ee.ethz.ch/file/911046053530c38b51036243246fcdd0/smart_contract.png,"besterma, wangye",FS 24,Jean Marc Müller,muelleje@student.ethz.ch,True
@@ -163,8 +175,8 @@ Crawling the Bitcoin Client Ecosystem,//tik-db.ee.ethz.ch/file/beb2fdb5ba5b3e4bd
 Cue and Mix-Point Estimation for Automated DJ Systems [confidential],//tik-db.ee.ethz.ch/file/8c581e6c2c68b58c63e37b7f6dfde1ca/music_icon.png,lucala,HS 23,Giulia Argüello,agiulia@student.ethz.ch,True
 DataComp Challenge,//tik-db.ee.ethz.ch/file/22063d05d41ad6999dd1edc25fbbfecf/datacomp.png,"taczel, besterma",HS 23,Dustin Brunner,dustin.brunner@gmx.ch,True
 Personalized Federated Learning with Pre-Trained GNNs [confidential],/img/logo_faded.jpg,begressy,HS 23,Jakob Geusen,jgeusen@student.ethz.ch,True
-Diverse Datasets for BCI [confidential],//tik-db.ee.ethz.ch/file/cea5358e124cdf8b7d4cd8e2f1917021/algo3.jpeg,kard,HS 23,Cheng Xuan,cxuan@student.ethz.ch,True
 Pre-training a Deep Learning Model for Decoding Brain Activity [confidential],//tik-db.ee.ethz.ch/file/cea5358e124cdf8b7d4cd8e2f1917021/algo3.jpeg,kard,HS 23,Pascal Schellenberg,pas.schellenberg@gmail.com,True
+Diverse Datasets for BCI [confidential],//tik-db.ee.ethz.ch/file/cea5358e124cdf8b7d4cd8e2f1917021/algo3.jpeg,kard,HS 23,Cheng Xuan,cxuan@student.ethz.ch,True
 Leveraging Dense Text Representations for Efficient Language Modeling,/img/logo_faded.jpg,pbelcak,HS 23,Philippe Schläpfer,pschlaepfer@student.ethz.ch,True
 SUPClust: Active Learning at the Boundaries,//tik-db.ee.ethz.ch/file/847b90908ed1402428e6291db6654086/4-arrows-in-circle-vector-33389243.jpg,"besterma, taczel",HS 23,Yuta Ono,youcana40627@gmail.com,True
 Exploring Activation Ensembles for Feed-Forward Neural Networks,//tik-db.ee.ethz.ch/file/b9d8204d1b6ef32b0bcf7518ce8c10af/activation_ensembling.png,"fgroetschla, jmathys",HS 23,Sven Brändle,sbraendle@student.ethz.ch,True
@@ -386,8 +398,8 @@ Exploring Blockchain Peer-to-Peer Networks,//tik-db.ee.ethz.ch/file/d21cf201b868
 Classifying Medical Text using State-of-the-art Natural Language Processing Techniques,//tik-db.ee.ethz.ch/file/5328640cbf279c4c7e80735a03d3e2f5/Medical_Documents.jpeg,damianp,HS 20,Sandro Luck,sandro.luck@gmx.ch,True
 Conditional Language Generation [confidential],//tik-db.ee.ethz.ch/file/b0ae9949e53df96dbfc65a25b0c2ac22/Chatbot.jpg,"damianp, begressy",HS 20,Florian Bolli,bollif@student.ethz.ch,True
 Web App Design for Cryptocurrency Transaction System,//tik-db.ee.ethz.ch/file/b7ffd05917172f3c32f0a5b298fee756/icon.png,wangye,HS 20,Xiaochen Zheng,xzheng@student.ethz.ch,True
-Server Design for Digital Payment System,//tik-db.ee.ethz.ch/file/4931f8186b605320fe42951d3ad16417/icon.png,wangye,HS 20,Shenyi Wang,shewang@student.ethz.ch,True
 Cryptomoney In Real Life,//tik-db.ee.ethz.ch/file/77b0338ac42df991f93f81c83a0d3665/icon.png,wangye,HS 20,Yu Chen,yuchen14@student.ethz.ch,True
+Server Design for Digital Payment System,//tik-db.ee.ethz.ch/file/4931f8186b605320fe42951d3ad16417/icon.png,wangye,HS 20,Shenyi Wang,shewang@student.ethz.ch,True
 DAB+ Positioning,//tik-db.ee.ethz.ch/file/e628de05603f0bf82d8da25681752283/antenna_small.jpg,"sitanne, damianp",HS 20,Otto Lepistö,ottole@student.ethz.ch,True
 Variance Reduction in Decentralized Training over Heterogeneous Data,/img/logo_faded.jpg,NULL170,HS 20,Yue Liu,yue.liu@inf.ethz.ch,True
 DyR-MLP: a Dynamic Routing MLP Model for Temporal Knowledge Graph [confidential],//tik-db.ee.ethz.ch/file/89ded518bb62db85052d291608f4f43a/snn.jpg,zhmeng,HS 20,Guirong Fu,fug@student.ethz.ch,True
