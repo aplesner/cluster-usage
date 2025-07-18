@@ -7,47 +7,62 @@ from typing import Optional
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from ..database.schema import get_db_connection
-from ..config import DB_PATH
+from ..config import DB_PATH, PORT
 from .email_config import (
     SMTP_SERVER, SMTP_PORT, EMAIL_SENDER, EMAIL_PASSWORD, 
     EMAIL_DOMAIN, ADMIN_EMAIL, CLUSTER_NAME, MAX_RETRIES, 
     RETRY_DELAY, MAX_EMAILS_PER_HOUR
 )
+from ..database.queries import get_user_thesis_and_supervisors
 
 logger = logging.getLogger(__name__)
 
 # Rate limiting storage (in-memory for simplicity)
 email_rate_limit = {}
+IS_DEBUGGING = (PORT == 5001)
 
 def send_email(user: str, email_type: str = "reservation-not-used", context: str = "") -> bool:
     """
     Send email notification to user with rate limiting.
-    
-    Args:
-        user: Username to send email to
-        email_type: Type of email notification
-        context: Additional context information
-        
-    Returns:
-        bool: True if email was sent successfully, False otherwise
+    If the user has thesis info, CC all their supervisors.
+    If user contains '@', treat as full email address.
     """
     try:
-        # Check rate limiting
-        if not check_rate_limit(user):
+        # Check rate limiting (only for usernames, not raw emails)
+        if '@' not in user and not check_rate_limit(user):
             logger.warning(f"Rate limit exceeded for user {user}")
             return False
         
-        # For now, just log to console
-        logger.info(f"EMAIL NOTIFICATION - To: {user}, Type: {email_type}, Context: {context}")
+        # Find supervisors for CC
+        cc_emails = []
+        try:
+            # Only look up supervisors if user is a username
+            lookup_user = user.split('@')[0] if '@' in user else user
+            thesis_info = get_user_thesis_and_supervisors(DB_PATH, lookup_user)
+            if thesis_info and len(thesis_info) > 0:
+                supervisors = set()
+                for thesis in thesis_info:
+                    supervisors.update(thesis['supervisors'])
+                # Remove the user from CC if present
+                supervisors.discard(lookup_user)
+                cc_emails = [f"{sup}@{EMAIL_DOMAIN}" for sup in supervisors if sup]
+        except Exception as e:
+            logger.error(f"Error fetching supervisors for CC: {e}")
+            cc_emails = []
         
-        # Store email notification in task logs
-        store_email_notification(user, email_type, context)
+        # For now, just log to console
+        logger.info(f"EMAIL NOTIFICATION - To: {user}, Type: {email_type}, Context: {context}, CC: {cc_emails}")
+        
+        # Store email notification in task logs (only for usernames)
+        if '@' not in user:
+            store_email_notification(user, email_type, context)
         
         # Send actual email with retries
         for attempt in range(MAX_RETRIES):
-            if send_smtp_email(user, email_type, context):
+            if send_smtp_email(user, email_type, context, cc_emails=cc_emails):
                 logger.info(f"Email sent successfully to {user}")
-                update_rate_limit(user)
+                if '@' not in user:
+                    update_rate_limit(user)
                 return True
             else:
                 logger.warning(f"Email attempt {attempt + 1} failed for {user}")
@@ -83,23 +98,29 @@ def update_rate_limit(user: str) -> None:
         email_rate_limit[user] = []
     email_rate_limit[user].append(now)
 
-def send_smtp_email(recipient: str, email_type: str, context: str) -> bool:
+def send_smtp_email(recipient: str, email_type: str, context: str, cc_emails=None) -> bool:
     """
     Send email via SMTP using Google's SMTP server.
-    
-    Args:
-        recipient: Email recipient (username@domain.com)
-        email_type: Type of email notification
-        context: Additional context information
-        
-    Returns:
-        bool: True if email was sent successfully, False otherwise
+    Optionally CC additional recipients.
+    If recipient contains '@', treat as full email address.
     """
+    if cc_emails is None:
+        cc_emails = []
+
+    if IS_DEBUGGING:
+        logger.info(f"DEBUGGING - Email not sent to {recipient} bc of DEBUGGING (CC: {cc_emails})")
+        return True
+    
     try:
         # Create message
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
-        msg['To'] = f"{recipient}@{EMAIL_DOMAIN}"
+        if '@' in recipient:
+            msg['To'] = recipient
+        else:
+            msg['To'] = f"{recipient}@{EMAIL_DOMAIN}"
+        if cc_emails:
+            msg['Cc'] = ', '.join(cc_emails)
         msg['Subject'] = get_email_subject(email_type)
         
         # Create email body
@@ -114,8 +135,9 @@ def send_smtp_email(recipient: str, email_type: str, context: str) -> bool:
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             
             # Send email
+            to_addrs = [msg['To']] + cc_emails
             text = msg.as_string()
-            server.sendmail(EMAIL_SENDER, msg['To'], text)
+            server.sendmail(EMAIL_SENDER, to_addrs, text)
             
         return True
         
@@ -138,6 +160,8 @@ def get_email_subject(email_type: str) -> str:
         "reservation-not-used": "Cluster Reservation Alert - Underutilized Resources",
         "reservation-expired": "Cluster Reservation Alert - Reservation Expired",
         "reservation-reminder": "Cluster Reservation Reminder",
+        "gpu-usage-high": "Cluster Usage Alert - High GPU Usage",
+        "io-usage-high": "Cluster Usage Alert - High IO Usage",
         "default": "Cluster Usage Notification"
     }
     return subjects.get(email_type, subjects["default"])
@@ -225,6 +249,74 @@ def create_email_body(recipient: str, email_type: str, context: str) -> str:
         </html>
         """
     
+    elif email_type == "gpu-usage-high":
+        return f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .alert {{ background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>{CLUSTER_NAME} - High GPU Usage Alert</h2>
+                    <p>Hello {recipient},</p>
+                </div>
+                <div class="alert">
+                    <h3>🚨 High GPU Usage Detected</h3>
+                    <p>Your total GPU usage has exceeded the configured threshold.</p>
+                </div>
+                <div class="details">
+                    <h4>Usage Details:</h4>
+                    <p>{context}</p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated notification from the {CLUSTER_NAME} monitoring system.</p>
+                    <p>If you have any questions, please contact: <a href="mailto:{ADMIN_EMAIL}">{ADMIN_EMAIL}</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+    elif email_type == "io-usage-high":
+        return f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .alert {{ background-color: #fceabb; border: 1px solid #f8d347; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>{CLUSTER_NAME} - High IO Usage Alert</h2>
+                    <p>Hello {recipient},</p>
+                </div>
+                <div class="alert">
+                    <h3>🚨 High IO Usage Detected</h3>
+                    <p>Your total IO operations have exceeded the configured threshold.</p>
+                </div>
+                <div class="details">
+                    <h4>Usage Details:</h4>
+                    <p>{context}</p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated notification from the {CLUSTER_NAME} monitoring system.</p>
+                    <p>If you have any questions, please contact: <a href="mailto:{ADMIN_EMAIL}">{ADMIN_EMAIL}</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
     else:
         return f"""
         <html>
@@ -346,5 +438,41 @@ def get_email_notifications_count() -> int:
     except Exception as e:
         logger.error(f"Error getting email notifications count: {str(e)}")
         return 0
+    finally:
+        conn.close() 
+
+def get_email_counts_by_user(start_time: str, end_time: str) -> dict:
+    """
+    Get the number of sent emails to each user in a given time range.
+    Args:
+        start_time: Start of the time range (inclusive), as ISO string or 'YYYY-MM-DD HH:MM:SS'.
+        end_time: End of the time range (inclusive), as ISO string or 'YYYY-MM-DD HH:MM:SS'.
+    Returns:
+        Dict mapping username to count of sent emails.
+    """
+    import re
+    conn = get_db_connection(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT message FROM PeriodicTaskLogs 
+            WHERE task_name LIKE 'email-%' 
+              AND timestamp >= ? AND timestamp <= ?
+            """,
+            (start_time, end_time)
+        )
+        user_counts = {}
+        pattern = re.compile(r"Email notification sent to ([^\s]+)")
+        for row in cursor.fetchall():
+            message = row[0]
+            match = pattern.search(message or "")
+            if match:
+                username = match.group(1)
+                user_counts[username] = user_counts.get(username, 0) + 1
+        return user_counts
+    except Exception as e:
+        logger.error(f"Error getting email counts by user: {str(e)}")
+        return {}
     finally:
         conn.close() 

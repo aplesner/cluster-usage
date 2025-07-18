@@ -21,7 +21,13 @@ os.makedirs(ARCHIVE_LOGS_DIR, exist_ok=True)
 API_PREFIX = '/api'
 
 # App settings
-DEBUG = True
+DEBUG = False
 HOST = '0.0.0.0'
 PORT = 5000
 
+GPU_HOURS_THRESHOLD = 4
+IO_OPS_THRESHOLD = 250*1000
+GPU_MAX_HOURS = 4.0
+
+# Feature flags
+NOTIFY_SUPERVISORS_ON_NON_ETHZ_STUDENT_EMAILS = False

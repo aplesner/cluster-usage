@@ -7,15 +7,35 @@ const UserJobs = ({ jobs, isRunningJobs = false }) => {
     }
 
     const formatRuntime = (runtime) => {
-        // Convert runtime string (HH:MM:SS) to a more readable format
-        const [hours, minutes, seconds] = runtime.split(':').map(Number);
-        if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        } else if (minutes > 0) {
-            return `${minutes}m ${seconds}s`;
+        if (!runtime) return '';
+        // Support D-HH:MM:SS, HH:MM:SS, MM:SS
+        let days = 0, hours = 0, minutes = 0, seconds = 0;
+        const dMatch = runtime.match(/^(\d+)-(\d+):(\d+):(\d+)$/);
+        if (dMatch) {
+            days = Number(dMatch[1]);
+            hours = Number(dMatch[2]);
+            minutes = Number(dMatch[3]);
+            seconds = Number(dMatch[4]);
         } else {
-            return `${seconds}s`;
+            const hMatch = runtime.match(/^(\d+):(\d+):(\d+)$/);
+            if (hMatch) {
+                hours = Number(hMatch[1]);
+                minutes = Number(hMatch[2]);
+                seconds = Number(hMatch[3]);
+            } else {
+                const mMatch = runtime.match(/^(\d+):(\d+)$/);
+                if (mMatch) {
+                    minutes = Number(mMatch[1]);
+                    seconds = Number(mMatch[2]);
+                }
+            }
         }
+        let result = '';
+        if (days > 0) result += `${days}d `;
+        if (hours > 0) result += `${hours}h `;
+        if (minutes > 0) result += `${minutes}m `;
+        if (seconds > 0 && days === 0) result += `${seconds}s`;
+        return result.trim();
     };
 
     const truncateCommand = (command) => {
@@ -31,6 +51,7 @@ const UserJobs = ({ jobs, isRunningJobs = false }) => {
                     <thead>
                         <tr>
                             <th>Job ID</th>
+                            {!isRunningJobs && <th>End Time</th>}
                             <th>Host</th>
                             <th>Resources</th>
                             <th>Runtime</th>
@@ -42,6 +63,7 @@ const UserJobs = ({ jobs, isRunningJobs = false }) => {
                         {jobs.map((job) => (
                             <tr key={job.jobId} className={`job-status-${job.state.toLowerCase()}`}>
                                 <td>{job.jobId}</td>
+                                {!isRunningJobs && <td>{job.endTime ? new Date(job.endTime).toLocaleString() : ''}</td>}
                                 <td>{job.host}</td>
                                 <td>
                                     <div className="job-resources">

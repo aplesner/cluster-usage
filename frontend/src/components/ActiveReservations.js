@@ -5,15 +5,101 @@ import LoadingSpinner from './common/LoadingSpinner';
 import ErrorMessage from './common/ErrorMessage';
 import './ActiveReservations.css';
 
+function CalendarEventStringGenerator() {
+    const [users, setUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState('');
+    const [resource, setResource] = useState('tikgpu01');
+    const [num, setNum] = useState(8);
+    const [isTikgpuX, setIsTikgpuX] = useState(false);
+    const [comment, setComment] = useState('');
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const data = await api.getUsers();
+                setUsers(data);
+                if (data.length > 0) setSelectedUser(data[0].username);
+            } catch {
+                setUsers([]);
+            }
+        };
+        fetchUsers();
+    }, []);
+
+    const resourceOptions = Array.from({ length: 10 }, (_, i) => `tikgpu${(i+1).toString().padStart(2, '0')}`);
+
+    let resourceString = isTikgpuX ? 'tikgpuX' : resource;
+    let eventString = `${selectedUser} @ ${num}x ${resourceString}`;
+    if (comment.trim()) {
+        eventString += ` (${comment.trim()})`;
+    }
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(eventString);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+    };
+
+    return (
+        <div className="calendar-event-generator" style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #eee', borderRadius: '8px', background: '#fafbfc' }}>
+            <h4 style={{ marginBottom: '0.5rem' }}>Generate Reservation String</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+                <div>
+                    <label>User:&nbsp;</label>
+                    <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}>
+                        {users.map(user => (
+                            <option key={user.username} value={user.username}>{user.username}</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label>Resource:&nbsp;</label>
+                    <select value={resource} onChange={e => setResource(e.target.value)} disabled={isTikgpuX}>
+                        {resourceOptions.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label>Count:&nbsp;</label>
+                    <input type="number" min={1} max={40} value={num} onChange={e => setNum(Number(e.target.value))} style={{ width: '4em' }} />
+                </div>
+                <div>
+                    <label>
+                        <input type="checkbox" checked={isTikgpuX} onChange={e => setIsTikgpuX(e.target.checked)} /> tikgpuX
+                    </label>
+                </div>
+                <div>
+                    <label>Comment:&nbsp;</label>
+                    <input type="text" value={comment} onChange={e => setComment(e.target.value)} placeholder="Optional" style={{ width: '12em' }} />
+                </div>
+            </div>
+            <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontFamily: 'monospace', background: '#f4f4f4', padding: '0.3em 0.7em', borderRadius: '4px' }}>{eventString}</span>
+                <button onClick={handleCopy} style={{ padding: '0.2em 0.8em', fontSize: '1em', cursor: 'pointer' }}>{copied ? 'Copied!' : 'Copy'}</button>
+            </div>
+        </div>
+    );
+}
+
 function ActiveReservations() {
     const [reservations, setReservations] = useState([]);
+    const [unparsed, setUnparsed] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [lastRefresh, setLastRefresh] = useState(null);
 
     const fetchReservations = async () => {
         try {
             const data = await api.getActiveCalendarEvents();
-            setReservations(data);
+            if (Array.isArray(data)) {
+                setReservations(data);
+                setUnparsed([]);
+            } else {
+                setReservations(data.active_events || []);
+                setUnparsed(data.unparsed_events || []);
+            }
             setLoading(false);
         } catch (error) {
             console.error('Error fetching active reservations:', error);
@@ -22,9 +108,22 @@ function ActiveReservations() {
         }
     };
 
+    const fetchLastRefresh = async () => {
+        try {
+            const data = await api.getCalendarLastRefresh();
+            setLastRefresh(data.last_refresh);
+        } catch (error) {
+            setLastRefresh(null);
+        }
+    };
+
     useEffect(() => {
         fetchReservations();
-        const interval = setInterval(fetchReservations, 60000); // Refresh every minute
+        fetchLastRefresh();
+        const interval = setInterval(() => {
+            fetchReservations();
+            fetchLastRefresh();
+        }, 60000); // Refresh every minute
         return () => clearInterval(interval);
     }, []);
 
@@ -41,55 +140,146 @@ function ActiveReservations() {
         return 'badge';
     };
 
+    // Helper to check if a reservation is tikgpuX only
+    const isTikgpuXReservation = (reservation) => {
+        if (!reservation.resources || reservation.resources.length === 0) return false;
+        // True if all resources are tikgpuX (case-insensitive)
+        return reservation.resources.every(([_, resource]) =>
+            typeof resource === 'string' && resource.trim().toLowerCase() === 'tikgpux'
+        );
+    };
+    // Split reservations
+    const tikgpuXReservations = reservations.filter(isTikgpuXReservation);
+    const nonTikgpuXReservations = reservations.filter(r => !isTikgpuXReservation(r));
+
+    // Helper to format how long ago the last refresh was
+    const getTimeAgo = (isoString) => {
+        if (!isoString) return 'N/A';
+        const now = new Date();
+        const last = new Date(isoString);
+        const diffMs = now - last;
+        if (diffMs < 0) return 'just now';
+        const minutes = Math.floor(diffMs / 60000);
+        const seconds = Math.floor((diffMs % 60000) / 1000);
+        return `${minutes}m ${seconds}s ago`;
+    };
+
     if (loading) return <LoadingSpinner />;
     if (error) return <ErrorMessage message={error} />;
 
     return (
         <div className="active-reservations">
+            <CalendarEventStringGenerator />
             <div className="format-guide">
                 <h3>Calendar Event Format Guide</h3>
-                <p>Events should be formatted as follows:</p>
-                <ul>
-                    <li>For specific resources: <code>username @ NRx resource1, NRx resource2 (comment)</code></li>
-                    <li>Example: <code>wattenhofer @ 8x tikgpu10 (ICML deadline)</code></li>
-                    <li>For estimated resources: <code>username @ NRx tikgpuX</code></li>
-                    <li>Example: <code>wattenhofer @ 12x tikgpuX</code></li>
+                <ul style={{ marginBottom: 0 }}>
+                    <li>For specific resources: <code>username @ NRx resource1, NRx resource2 (comment)</code>, Example: <code>wattenhofer @ 8x tikgpu10 (ICML deadline)</code></li>
+                    <li>For estimated resources: <code>username @ NRx tikgpuX</code>, Example: <code>wattenhofer @ 12x tikgpuX</code></li>
                 </ul>
             </div>
 
-            <h2>Active Reservations</h2>
-            {reservations.length === 0 ? (
-                <p>No active reservations at the moment.</p>
-            ) : (
-                <div className="reservations-list">
-                    {reservations.map((reservation, index) => (
-                        <div key={index} className="reservation-card">
-                            <div className="user-header">
-                                <div className="user-info">
-                                    <span className="username">{reservation.username}</span>
-                                    {reservation.user_role && (
-                                        <span className={getRoleBadgeClass(reservation.user_role)}>
-                                            {reservation.user_role}
-                                        </span>
-                                    )}
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                Active Reservations
+                <span style={{ fontSize: '1rem', color: '#888', fontWeight: 'normal' }}>
+                    (refreshed {getTimeAgo(lastRefresh)})
+                </span>
+            </h2>
+
+            {/* Red Box: Do not use these reserved resources */}
+            {nonTikgpuXReservations.length > 0 ? (
+                <div className="rule-box" style={{ marginTop: '1rem' }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                        These resources are reserved for the users below. Please do not use them during the reservation period.
+                    </div>
+                    <div className="reservations-list">
+                        {nonTikgpuXReservations.map((reservation, index) => (
+                            <div key={index} className="reservation-card">
+                                <div className="user-header">
+                                    <div className="user-info">
+                                        <span className="username">{reservation.username}</span>
+                                        {reservation.user_role && (
+                                            <span className={getRoleBadgeClass(reservation.user_role)}>
+                                                {reservation.user_role}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Link to={`/users/${reservation.username}`} className="btn btn-sm">
+                                        Visit User
+                                    </Link>
                                 </div>
-                                <Link to={`/users/${reservation.username}`} className="btn btn-sm">
-                                    Visit User
-                                </Link>
+                                <div className="duration">{reservation.duration}</div>
+                                <div className="resources-tags">
+                                    {reservation.resources.map(([num, resource], idx) => (
+                                        <span key={idx} className="resource-tag">
+                                            {num}x {resource}
+                                        </span>
+                                    ))}
+                                </div>
+                                {reservation.comment && (
+                                    <div className="comment">{reservation.comment}</div>
+                                )}
                             </div>
-                            <div className="duration">{reservation.duration}</div>
-                            <div className="resources-tags">
-                                {reservation.resources.map(([num, resource], idx) => (
-                                    <span key={idx} className="resource-tag">
-                                        {num}x {resource}
-                                    </span>
-                                ))}
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="empty-box" style={{ marginTop: '1rem' }}>
+                    No active reservations.
+                </div>
+            )}
+
+            <h2>Announcements</h2>
+            {/* Blue Box: Announcements */}
+            {tikgpuXReservations.length > 0 ? (
+                <div className="info-box" style={{ marginTop: '1rem' }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                        These users are allowed to use more than the 4 GPUs, but you do not need to check that the resources are available (they are not reserved)
+                    </div>
+                    <div className="reservations-list" style={{ marginTop: '1rem' }}>
+                        {tikgpuXReservations.map((reservation, index) => (
+                            <div key={index} className="reservation-card">
+                                <div className="user-header">
+                                    <div className="user-info">
+                                        <span className="username">{reservation.username}</span>
+                                        {reservation.user_role && (
+                                            <span className={getRoleBadgeClass(reservation.user_role)}>
+                                                {reservation.user_role}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Link to={`/users/${reservation.username}`} className="btn btn-sm">
+                                        Visit User
+                                    </Link>
+                                </div>
+                                <div className="duration">{reservation.duration}</div>
+                                <div className="resources-tags">
+                                    {reservation.resources.map(([num, resource], idx) => (
+                                        <span key={idx} className="resource-tag">
+                                            {num}x {resource}
+                                        </span>
+                                    ))}
+                                </div>
+                                {reservation.comment && (
+                                    <div className="comment">{reservation.comment}</div>
+                                )}
                             </div>
-                            {reservation.comment && (
-                                <div className="comment">{reservation.comment}</div>
-                            )}
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="empty-box" style={{ marginTop: '1rem' }}>
+                    No active announcements.
+                </div>
+            )}
+
+            {unparsed.length > 0 && (
+                <div className="unparsed-reservations">
+                    <h3>Unparsed Reservations</h3>
+                    <ul>
+                        {unparsed.map((summary, idx) => (
+                            <li key={idx}><code>{summary}</code></li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </div>

@@ -7,6 +7,7 @@ import HistoricUsage from './components/historic/HistoricUsage';
 import TaskLogs from './components/tasks/TaskLogs';
 import CalendarView from './components/calendar/CalendarView';
 import ActiveReservations from './components/ActiveReservations';
+import DiscoCluster from './components/disco/DiscoCluster';
 import './App.css';
 
 function App() {
@@ -41,6 +42,9 @@ function App() {
               <li className="nav-item">
                 <Link to="/calendar" className="nav-link">Calendar</Link>
               </li>
+              <li className="nav-item">
+                <Link to="/disco" className="nav-link">DISCO Cluster</Link>
+              </li>
             </ul>
           </nav>
         </div>
@@ -58,6 +62,7 @@ function App() {
             <Route path="/sizes" element={<div>Size Distribution (Coming Soon)</div>} />
             <Route path="/tasks" element={<TaskLogs />} />
             <Route path="/calendar" element={<CalendarView />} />
+            <Route path="/disco" element={<DiscoCluster />} />
             <Route path="*" element={<div>Page Not Found</div>} />
           </Routes>
         </div>

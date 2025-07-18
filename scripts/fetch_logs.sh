@@ -1,4 +1,8 @@
 #!/bin/bash
+source scripts/variables.sh
+
+eval "$(ssh-agent -s)"
+ssh-add /local/home/aplesner/.ssh/id_rsa
 
 # Check variables
 if [ -z "$SERVER" ] || [ -z "$USER" ] || [ -z "$REMOTE_LOG_DIR" ] || [ -z "$LOG_FILE" ] || [ -z "$LOCAL_LOG_DIR" ] || [ -z "$LOG_FILE_NAME" ]; then
@@ -8,3 +12,5 @@ fi
 # Fetch logs from the server
 rsync "$USER@$SERVER:$REMOTE_LOG_DIR/$LOG_FILE" "$LOCAL_LOG_DIR/$LOG_FILE_NAME"
 rsync "$USER@$SERVER:$REMOTE_SLURM_LOG_DIR/$SLURM_LOG_FILE" "$LOCAL_SLURM_LOG_DIR/$SLURM_LOG_FILE_NAME"
+
+cat "$LOCAL_SLURM_LOG_DIR/$SLURM_LOG_FILE_NAME"

@@ -6,6 +6,9 @@ from enum import Enum
 import sqlite3
 import os
 from flask import jsonify
+from collections import defaultdict
+from backend.config import GPU_MAX_HOURS
+from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
 
 class JobState(Enum):
     RUNNING = "RUNNING"
@@ -27,6 +30,7 @@ class SlurmJob:
     elapsed_time: str
     state: JobState
     command: str
+    end_time: str  # New field for the end time column
 
 @dataclass
 class UserResourceUsage:
@@ -72,7 +76,7 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
         try:
             # Split by pipe character
             parts = line.strip().split('|')
-            if len(parts) < 11:  # We need exactly 11 fields
+            if len(parts) < 12:  # Now expect 12 fields
                 continue
                 
             job_id = int(parts[0])
@@ -97,6 +101,7 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
                     continue
             
             command = parts[10]
+            end_time = parts[11]  # New field
             
             job = SlurmJob(
                 job_id=job_id,
@@ -110,6 +115,7 @@ def parse_slurm_log(log_content: str) -> List[SlurmJob]:
                 elapsed_time=elapsed_time,
                 state=state,
                 command=command,
+                end_time=end_time,
             )
             jobs.append(job)
         except (ValueError, IndexError) as e:
@@ -134,10 +140,11 @@ def filter_jobs(jobs: List[SlurmJob],
         
     return filtered
 
-def calculate_user_resource_usage(jobs: List[SlurmJob], db_path: str) -> Dict[str, UserResourceUsage]:
-    """Calculate resource usage per user from a list of jobs."""
+def calculate_user_resource_usage(jobs, db_path: str) -> Dict[str, UserResourceUsage]:
+    """Calculate resource usage per user from a list of jobs, and also return per-host GPU counts."""
     usage_by_user: Dict[str, UserResourceUsage] = {}
-    
+    gpus_by_user_host = {}  # {user: {host: gpus}}
+
     for job in jobs:
         if job.user not in usage_by_user:
             user_role = get_user_role(db_path, job.user)
@@ -151,38 +158,58 @@ def calculate_user_resource_usage(jobs: List[SlurmJob], db_path: str) -> Dict[st
                 total_jobs=0,
                 hosts=set()
             )
-            
+            gpus_by_user_host[job.user] = {}
         usage = usage_by_user[job.user]
         usage.total_cpus += job.cpus
         usage.total_memory_mb += job.memory_mb
         usage.total_gpus += job.gpus
         usage.total_jobs += 1
-        
         if job.state == JobState.RUNNING:
             usage.running_jobs += 1
             if job.node_list and job.node_list != "None assigned":
                 usage.hosts.add(job.node_list)
-            
-    return usage_by_user
+                # Track GPUs per host
+                gpus_by_user_host[job.user][job.node_list] = gpus_by_user_host[job.user].get(job.node_list, 0) + job.gpus
+    return usage_by_user, gpus_by_user_host
 
-def get_current_usage_summary(jobs: List[SlurmJob], db_path: str) -> List[Dict]:
-    """Get a summary of current resource usage suitable for display in a table."""
+def extract_log_timestamp(log_file):
+    """Extract the timestamp from the first line of the slurm log file."""
+    with open(log_file, 'r') as f:
+        first_line = f.readline()
+    # Example: '# Slurm jobs from last 2 hours collected at 2025-07-17 14:10:03'
+    import re
+    match = re.search(r'collected at (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', first_line)
+    if match:
+        return match.group(1)
+    return None
+
+# Modify get_current_usage_summary to use the new hosts structure
+def get_current_usage_summary(db_path: str):
+    """Get a summary of current resource usage suitable for display in a table, and the log timestamp."""
+    log_file = os.path.join(CALENDAR_LOGS_DIR, 'slurm', 'slurm.log')
+    log_timestamp = extract_log_timestamp(log_file)
+    with open(log_file, 'r') as f:
+        log_content = f.read()
+    jobs = parse_slurm_log(log_content)
+
     running_jobs = filter_jobs(jobs, states=[JobState.RUNNING])
-    usage_by_user = calculate_user_resource_usage(running_jobs, db_path)
-    
-    # Convert to list of dicts for easy JSON serialization
+    usage_by_user, gpus_by_user_host = calculate_user_resource_usage(running_jobs, db_path)
+
     summary = []
     for user, usage in usage_by_user.items():
+        hosts_list = []
+        for host in sorted(list(usage.hosts)) if usage.hosts else ['None assigned']:
+            gpus = gpus_by_user_host.get(user, {}).get(host, 0)
+            hosts_list.append({'name': host, 'gpus': gpus})
         summary.append({
             'user': user,
             'user_role': usage.user_role,
             'total_cpus': usage.total_cpus,
             'total_memory_gb': round(usage.total_memory_mb / 1024, 2),  # Convert to GB
             'total_gpus': usage.total_gpus,
-            'hosts': sorted(list(usage.hosts)) if usage.hosts else ['None assigned']
+            'hosts': hosts_list
         })
-        
-    return sorted(summary, key=lambda x: x['total_gpus'], reverse=True)  # Sort by GPU usage
+    return sorted(summary, key=lambda x: x['total_gpus'], reverse=True), log_timestamp
 
 def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
     """Store Slurm jobs in the database"""
@@ -241,12 +268,12 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
             cursor.execute("""
                 INSERT OR REPLACE INTO Jobs (
                     job_id, log_id, user_id, machine_id,
-                    cpus, memory, gpus, runtime, state, command
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    cpus, memory, gpus, runtime, state, command, end_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 job.job_id, log_id, user_id, machine_id,
                 job.cpus, job.memory_mb, job.gpus,
-                job.elapsed_time, job.state.value, job.command
+                job.elapsed_time, job.state.value, job.command, job.end_time
             ))
         
         # Commit transaction

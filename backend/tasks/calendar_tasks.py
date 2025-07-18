@@ -25,6 +25,11 @@ def is_valid_user(username):
     conn.close()
     return result is not None
 
+def is_valid_resource(resource_name):
+    """Check if the resource name matches allowed patterns."""
+    # Matches artongpu01-10, tikgpu01-10, artongpu1-9, tikgpu1-9, tikgpuX
+    return re.match(r'^(artongpu(0[1-9]|10|[1-9])|tikgpu(0[1-9]|10|[1-9]|X))$', resource_name) is not None
+
 def calculate_duration(start_time, end_time):
     """Calculate the duration between start and end time in days and hours"""
     if isinstance(start_time, str):
@@ -50,19 +55,18 @@ def ensure_calendar_logs_dir():
     if not os.path.exists(CALENDAR_LOGS_DIR):
         os.makedirs(CALENDAR_LOGS_DIR)
 
-def write_calendar_entries_to_log(active_events):
-    """Write all active calendar entries to the log file.
-    Always writes to calendar_today.log, overwriting previous entries.
-    """
+def write_calendar_entries_to_log(active_events, unparsed_events=[]):
+    """Write all active and unparsed calendar entries to their respective log files, overwriting previous entries."""
     ensure_calendar_logs_dir()
-    
-    # Always use calendar_today.log
     log_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_today.log')
-    
-    # Write all entries to the log file (overwriting previous content)
     with open(log_file, 'w') as f:
         for event in active_events:
             f.write(json.dumps(event) + '\n')
+    if unparsed_events is not None:
+        unparsed_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_unparsed.log')
+        with open(unparsed_file, 'w') as f:
+            for summary in unparsed_events:
+                f.write(summary + '\n')
 
 def parse_event_summary(summary):
     """Parse event summary to extract username, resources, and comment.
@@ -74,16 +78,21 @@ def parse_event_summary(summary):
         'comment': str or None,
         'original': str
     }
+    If invalid, returns {'error': reason, 'original': summary}
     """
     summary = summary.strip()
     
     # Step 1: Split by @ to get username and the rest
     if '@' not in summary:
-        return None
+        return {'error': 'missing @', 'original': summary}
     
     username, rest = summary.split('@', 1)
     username = username.strip()
     rest = rest.strip()
+    
+    # Check if username is valid
+    if not is_valid_user(username):
+        return {'error': f'invalid username: {username}', 'original': summary}
     
     # Step 2: Extract comment if present
     comment = None
@@ -106,7 +115,7 @@ def parse_event_summary(summary):
         entry = entry.strip()
         if not entry:
             continue
-            
+        
         # Try to match patterns like "4x", "4xtikgpu10", "x tikgpu10"
         number_match = re.match(r'^(\d+)?x', entry)
         if number_match:
@@ -119,14 +128,20 @@ def parse_event_summary(summary):
             # Extract the resource name (everything after the x)
             resource = entry[number_match.end():].strip()
             if resource:  # If resource name is in the same entry
+                if not is_valid_resource(resource):
+                    return {'error': f'invalid resource: {resource}', 'original': summary}
                 resources.append((current_number, resource))
                 current_number = None
         elif current_number is not None:
             # If we have a number from previous entry, this must be the resource
+            if not is_valid_resource(entry):
+                return {'error': f'invalid resource: {entry}', 'original': summary}
             resources.append((current_number, entry))
             current_number = None
         else:
             # If no number found, assume 8x
+            if not is_valid_resource(entry):
+                return {'error': f'invalid resource: {entry}', 'original': summary}
             resources.append((8, entry))
     
     return {
@@ -159,15 +174,15 @@ def get_active_calendar_events():
         # Format the events into a readable string
         active_events = []
         log_entries = []
+        unparsed_events = []
         
         for event in cal.walk('VEVENT'):
             start = event.get('dtstart').dt
             end = event.get('dtend').dt
             summary = str(event.get('summary', 'No title'))
             
-            # Parse the event summary
-            parsed_event = parse_event_summary(summary)
-            
+
+                
             # Convert dates to datetimes for consistent comparison
             if isinstance(start, date) and not isinstance(start, datetime):
                 # Convert date to datetime at midnight in local timezone
@@ -191,11 +206,18 @@ def get_active_calendar_events():
             
             # Check if the event is currently active
             is_active = start <= now <= end
-            
+
+            if not is_active:
+                continue
+
+            # Parse the event summary
+            parsed_event = parse_event_summary(summary)
+            if 'error' in parsed_event:
+                unparsed_events.append(f"{summary} [reason: {parsed_event['error']}]")
+                continue
+ 
             if is_active and parsed_event:
                 # Only include events for users that exist in the database
-                if not is_valid_user(parsed_event['username']):
-                    continue
                     
                 # Calculate duration
                 duration = calculate_duration(start, end)
@@ -227,13 +249,15 @@ def get_active_calendar_events():
                 active_events.append('\n'.join(details))
         
         # Write all entries to log file at once
-        if log_entries:
-            write_calendar_entries_to_log(log_entries)
+        write_calendar_entries_to_log(log_entries, unparsed_events)
         
+        result = {
+            'active_events': active_events,
+            'unparsed_events': unparsed_events
+        }
         if not active_events:
-            return "No active events found at the current time."
-        
-        return active_events
+            result['message'] = "No active events found at the current time."
+        return result
         
     except requests.exceptions.RequestException as e:
         return f"Error fetching calendar events: {str(e)}"
