@@ -150,6 +150,48 @@ const api = {
       throw new Error('Failed to fetch user overview data');
     }
     return response.json();
+  },
+  async getCalendarLastRefresh() {
+    const response = await fetch('/api/calendar/last-refresh');
+    if (!response.ok) {
+      throw new Error('Failed to fetch last calendar refresh time');
+    }
+    return response.json();
+  },
+  async getUserGpuHours(username) {
+    const response = await fetch(`/api/users/${username}/gpu-hours`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch user GPU hours');
+    }
+    return response.json();
+  },
+  async getAllUsersGpuHours() {
+    const response = await fetch('/api/users/gpu-hours');
+    if (!response.ok) {
+      throw new Error('Failed to fetch all users GPU hours');
+    }
+    return response.json();
+  },
+  async getUsersEmailedLast12h() {
+    const response = await fetch('/api/users/emails-last-12h');
+    if (!response.ok) {
+      throw new Error('Failed to fetch users emailed in last 12 hours');
+    }
+    return response.json();
+  },
+  async getUserThesisSupervisors(username) {
+    const response = await fetch(`/api/users/${username}/thesis-supervisors`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch thesis and supervisor info');
+    }
+    return response.json();
+  },
+  async getAllThesesSupervisors() {
+    const response = await fetch('/api/theses-supervisors');
+    if (!response.ok) {
+      throw new Error('Failed to fetch all theses and supervisors');
+    }
+    return response.json();
   }
 };
 

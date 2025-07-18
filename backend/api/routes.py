@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, current_app, send_from_directory
 import os
 import sys
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -11,7 +11,7 @@ from backend.database.queries import (
     get_database_stats, get_all_users, get_all_machines,
     get_user_usage, get_machine_usage, get_time_usage, get_size_distribution,
     get_time_stats_for_user, get_top_users_recent_logs, get_historic_usage,
-    get_historic_usage_per_user
+    get_historic_usage_per_user, get_user_thesis_and_supervisors, get_all_theses_and_supervisors
 )
 from backend.tasks.periodic_tasks import get_task_logs, get_task_logs_count
 from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
@@ -202,15 +202,27 @@ def get_active_calendar_events():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@api.route('/calendar/last-refresh', methods=['GET'])
+def get_calendar_last_refresh():
+    """Return the last modification time of calendar_today.log as an ISO string."""
+    try:
+        from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
+        log_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_today.log')
+        mtime = os.path.getmtime(log_file)
+        dt = datetime.fromtimestamp(mtime)
+        return jsonify({'last_refresh': dt.isoformat()})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @api.route('/calendar/current-usage', methods=['GET'])
 def get_current_usage():
     """Get current resource usage from Slurm logs (now from DB only)"""
     try:
         db_path = current_app.config['DB_PATH']
-        usage_summary = get_current_usage_summary(db_path)
+        usage_summary, log_timestamp = get_current_usage_summary(db_path)
 
         return jsonify({
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': log_timestamp,
             'usage': usage_summary
         })
     except Exception as e:
@@ -395,6 +407,14 @@ def get_user_job_history(username, db_path, limit=100):
     finally:
         conn.close()
 
+@api.route('/users/<username>/thesis-supervisors', methods=['GET'])
+def get_user_thesis_supervisors(username):
+    db_path = current_app.config['DB_PATH']
+    result = get_user_thesis_and_supervisors(db_path, username)
+    if not result:
+        return jsonify({'error': 'No thesis or supervisor information found'}), 404
+    return jsonify(result)
+
 @api.route('/users/<username>/historic-usage', methods=['GET'])
 def get_user_historic_usage(username):
     """Get historic GPU usage for a specific user, grouped by machine"""
@@ -414,4 +434,52 @@ def get_all_historic_usage():
         return jsonify(usage_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@api.route('/users/gpu-hours', methods=['GET'])
+def get_all_users_gpu_hours():
+    """Return the total GPU hours for all users, summed across all machines."""
+    try:
+        db_path = current_app.config['DB_PATH']
+        usage_by_user = get_historic_usage_per_user(db_path)
+        result = {}
+        for username, machines in usage_by_user.items():
+            gpu_hours = 0.0
+            for machine, stats in machines.items():
+                gpu_hours += stats.get('total_gpu_hours', 0.0)
+            result[username] = gpu_hours
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@api.route('/users/emails-last-12h', methods=['GET'])
+def get_users_emailed_last_12h():
+    """Return a list of usernames who received an email from the system in the last 12 hours."""
+    try:
+        db_path = current_app.config['DB_PATH']
+        conn = get_db_connection(db_path)
+        cursor = conn.cursor()
+        twelve_hours_ago = datetime.now() - timedelta(hours=12)
+        # Query PeriodicTaskLogs for recent email notifications
+        cursor.execute("""
+            SELECT message FROM PeriodicTaskLogs
+            WHERE task_name LIKE 'email-%' AND timestamp >= ?
+        """, (twelve_hours_ago.strftime('%Y-%m-%d %H:%M:%S'),))
+        import re
+        emailed_users = set()
+        pattern = re.compile(r"Email notification sent to ([^\s]+)")
+        for row in cursor.fetchall():
+            message = row[0]
+            match = pattern.search(message or "")
+            if match:
+                emailed_users.add(match.group(1))
+        conn.close()
+        return jsonify({'emailed_users': list(emailed_users)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@api.route('/theses-supervisors', methods=['GET'])
+def get_all_theses_supervisors():
+    db_path = current_app.config['DB_PATH']
+    result = get_all_theses_and_supervisors(db_path)
+    return jsonify(result)
 

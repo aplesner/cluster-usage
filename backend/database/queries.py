@@ -727,9 +727,7 @@ def get_historic_usage_per_user(db_path: str, username: str = None):
                         start_time = end_time - duration
                         from datetime import datetime, timedelta
                         now = datetime.now()
-                        if user == "svetter":
-                            print("now: ", now)
-                            print(start_time)
+
                         min_start_time = now - timedelta(hours=GPU_MAX_HOURS)
                         if start_time < min_start_time:
                             start_time = min_start_time
@@ -765,3 +763,52 @@ def get_historic_usage_per_user(db_path: str, username: str = None):
         return {}
     finally:
         conn.close()
+
+def get_user_thesis_and_supervisors(db_path, username):
+    """Return thesis info and supervisors for a given student username from UserSupervisors table."""
+    conn = get_db_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT thesis_title, semester, student_email, GROUP_CONCAT(DISTINCT supervisor_username) as supervisors
+        FROM UserSupervisors
+        WHERE student_username = ?
+        GROUP BY thesis_title, semester, student_email
+        ORDER BY thesis_title
+    ''', (username,))
+    rows = cursor.fetchall()
+    conn.close()
+    if not rows:
+        return None
+    # If multiple theses, return all; else just one
+    result = []
+    for row in rows:
+        result.append({
+            'thesis_title': row['thesis_title'],
+            'semester': row['semester'],
+            'student_email': row['student_email'],
+            'supervisors': row['supervisors'].split(',') if row['supervisors'] else []
+        })
+    return result
+
+def get_all_theses_and_supervisors(db_path):
+    """Return all users with their theses and supervisors from UserSupervisors table."""
+    conn = get_db_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT student_username, thesis_title, semester, student_email, GROUP_CONCAT(DISTINCT supervisor_username) as supervisors
+        FROM UserSupervisors
+        GROUP BY student_username, thesis_title, semester, student_email
+        ORDER BY student_username, thesis_title
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    result = []
+    for row in rows:
+        result.append({
+            'student_username': row['student_username'],
+            'thesis_title': row['thesis_title'],
+            'semester': row['semester'],
+            'student_email': row['student_email'],
+            'supervisors': row['supervisors'].split(',') if row['supervisors'] else []
+        })
+    return result

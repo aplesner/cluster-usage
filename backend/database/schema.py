@@ -110,6 +110,18 @@ def initialize_database(db_path: str):
     )
     ''')
     
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS UserSupervisors (
+        id INTEGER PRIMARY KEY,
+        student_username TEXT NOT NULL,
+        supervisor_username TEXT NOT NULL,
+        thesis_title TEXT,
+        semester TEXT,
+        student_email TEXT,
+        UNIQUE(student_username, supervisor_username, thesis_title)
+    )
+    ''')
+    
     # Add end_time column to Jobs table if it does not exist
     try:
         cursor.execute("PRAGMA table_info(Jobs)")

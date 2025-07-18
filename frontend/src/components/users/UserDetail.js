@@ -37,6 +37,8 @@ const UserDetail = () => {
   const [jobHistory, setJobHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [thesisInfo, setThesisInfo] = useState(null);
+  const [thesisError, setThesisError] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -66,6 +68,20 @@ const UserDetail = () => {
     };
 
     fetchUserData();
+  }, [username]);
+
+  useEffect(() => {
+    const fetchThesisInfo = async () => {
+      try {
+        const data = await api.getUserThesisSupervisors(username);
+        setThesisInfo(data);
+        setThesisError(null);
+      } catch (err) {
+        setThesisInfo(null);
+        setThesisError('No thesis information');
+      }
+    };
+    fetchThesisInfo();
   }, [username]);
 
   // Format date for chart display
@@ -144,6 +160,25 @@ const UserDetail = () => {
 
   return (
     <div className="user-detail-container">
+      {/* Thesis and Supervisor Info at the top */}
+      <div style={{ marginBottom: 20 }}>
+        {thesisInfo && thesisInfo.length > 0 ? (
+          <div style={{ background: '#e3f0ff', color: '#155fa0', borderRadius: 8, padding: 16, border: '1px solid #b6d4fe' }}>
+            <strong>Thesis Information</strong>
+            {thesisInfo.map((thesis, idx) => (
+              <div key={idx} style={{ marginTop: 8 }}>
+                <div><strong>Title:</strong> {thesis.thesis_title}</div>
+                <div><strong>Semester:</strong> {thesis.semester}</div>
+                <div><strong>Supervisors:</strong> {thesis.supervisors && thesis.supervisors.length > 0 ? thesis.supervisors.join(', ') : '-'}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ background: '#f3f3f3', color: '#555', borderRadius: 8, padding: 16, border: '1px solid #ddd' }}>
+            No thesis information
+          </div>
+        )}
+      </div>
       <div className="page-header">
         <h2 className="page-title">User Details: {username}</h2>
         <Link to="/users" className="btn btn-secondary">Back to Users</Link>

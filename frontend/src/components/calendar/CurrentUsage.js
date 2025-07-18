@@ -10,6 +10,12 @@ const CurrentUsage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'total_gpus', direction: 'desc' });
+    const [gpuHours, setGpuHours] = useState({});
+    const [gpuHoursLoading, setGpuHoursLoading] = useState(false);
+    const [emailedUsers, setEmailedUsers] = useState([]);
+    const [thesesSupervisors, setThesesSupervisors] = useState([]);
+    const [thesesLoading, setThesesLoading] = useState(true);
+    const [thesesError, setThesesError] = useState(null);
 
     const fetchUsageData = async () => {
         try {
@@ -23,11 +29,66 @@ const CurrentUsage = () => {
         }
     };
 
+    // Fetch GPU hours for all users in the table
+    const fetchAllGpuHours = async (users) => {
+        setGpuHoursLoading(true);
+        try {
+            const allGpuHours = await api.getAllUsersGpuHours();
+            const hoursMap = {};
+            users.forEach(user => {
+                hoursMap[user.user] = allGpuHours[user.user] !== undefined ? allGpuHours[user.user] : null;
+            });
+            setGpuHours(hoursMap);
+        } catch {
+            // fallback: set all to null
+            const hoursMap = {};
+            users.forEach(user => { hoursMap[user.user] = null; });
+            setGpuHours(hoursMap);
+        }
+        setGpuHoursLoading(false);
+    };
+
+    // Fetch users emailed in last 12 hours
+    const fetchEmailedUsers = async () => {
+        try {
+            const data = await api.getUsersEmailedLast12h();
+            setEmailedUsers(data.emailed_users || []);
+        } catch {
+            setEmailedUsers([]);
+        }
+    };
+
     useEffect(() => {
         fetchUsageData();
-        const interval = setInterval(fetchUsageData, 60000); // Refresh every minute
+        fetchEmailedUsers();
+        // Fetch all theses and supervisors
+        const fetchTheses = async () => {
+            try {
+                setThesesLoading(true);
+                const data = await api.getAllThesesSupervisors();
+                setThesesSupervisors(data);
+                setThesesError(null);
+            } catch (err) {
+                setThesesSupervisors([]);
+                setThesesError('Failed to fetch theses and supervisors');
+            } finally {
+                setThesesLoading(false);
+            }
+        };
+        fetchTheses();
+        const interval = setInterval(() => {
+            fetchUsageData();
+            fetchEmailedUsers();
+            fetchTheses();
+        }, 60000); // Refresh every minute
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        if (usageData?.usage) {
+            fetchAllGpuHours(usageData.usage);
+        }
+    }, [usageData]);
 
     // Request a sort
     const requestSort = (key) => {
@@ -89,8 +150,20 @@ const CurrentUsage = () => {
                 <div className="card-header">
                     <h3>Current Resource Usage</h3>
                     <div className="last-updated">
-                        Last updated: {usageData?.timestamp ? new Date(usageData.timestamp).toLocaleTimeString() : 'N/A'}
+                        Last updated: {usageData?.timestamp ?
+                            new Date(usageData.timestamp.replace(' ', 'T')).toLocaleString() : 'N/A'}
                     </div>
+                    {usageData?.timestamp && (
+                        <div style={{ color: '#888', fontSize: '0.95em', marginTop: '0.2em' }}>
+                            {(() => {
+                                const now = new Date();
+                                const last = new Date(usageData.timestamp.replace(' ', 'T'));
+                                const diffMs = now - last;
+                                const hours = diffMs / 3600000;
+                                return `(${hours.toFixed(1)} hours ago)`;
+                            })()}
+                        </div>
+                    )}
                 </div>
                 <div className="card-body">
                     <div className="table-container">
@@ -98,6 +171,7 @@ const CurrentUsage = () => {
                             <thead>
                                 <tr>
                                     <th>User</th>
+                                    <th title="System Flags">🏳️</th>
                                     <th>Role</th>
                                     <th 
                                         className={getSortClass('total_cpus')}
@@ -117,7 +191,7 @@ const CurrentUsage = () => {
                                     >
                                         GPUs
                                     </th>
-                                    <th>Active Total GPU Hours</th>
+                                    <th>Total GPU Hours</th>
                                     <th>Hosts</th>
                                     <th>Actions</th>
                                 </tr>
@@ -127,6 +201,9 @@ const CurrentUsage = () => {
                                     sortedData.map((user) => (
                                         <tr key={user.user}>
                                             <td>{user.user}</td>
+                                            <td style={{ textAlign: 'center', fontSize: '1.3em' }}>
+                                                {emailedUsers.includes(user.user) ? <span title="User received an email in the last 12h">📧</span> : ''}
+                                            </td>
                                             <td>
                                                 {user.user_role && (
                                                     <span className={getRoleBadgeClass(user.user_role)}>
@@ -137,12 +214,12 @@ const CurrentUsage = () => {
                                             <td>{user.total_cpus}</td>
                                             <td>{user.total_memory_gb.toFixed(1)}</td>
                                             <td>{user.total_gpus}</td>
-                                            <td>{user.total_gpu_hours !== undefined ? user.total_gpu_hours.toFixed(2) : 'N/A'}</td>
+                                            <td>{gpuHoursLoading ? <span>...</span> : (gpuHours[user.user] !== null && gpuHours[user.user] !== undefined ? gpuHours[user.user].toFixed(2) : 'N/A')}</td>
                                             <td>
                                                 <div className="hosts-list">
                                                     {user.hosts.map((host, idx) => (
-                                                        <span key={idx} className={getHostTagClass(host)}>
-                                                            {host}
+                                                        <span key={idx} className={getHostTagClass(host.name)}>
+                                                            {host.gpus > 0 ? `${host.gpus}x ` : ''}{host.name}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -156,7 +233,7 @@ const CurrentUsage = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="8" style={{ textAlign: 'center' }}>
+                                        <td colSpan="9" style={{ textAlign: 'center' }}>
                                             No active jobs found
                                         </td>
                                     </tr>
@@ -164,6 +241,56 @@ const CurrentUsage = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+            {/* Theses and Supervisors Table */}
+            <div className="card" style={{ marginTop: 32 }}>
+                <div className="card-header">
+                    <h3>Theses and Supervisors (from database)</h3>
+                </div>
+                <div className="card-body">
+                    {thesesLoading ? (
+                        <LoadingSpinner />
+                    ) : thesesError ? (
+                        <ErrorMessage message={thesesError} />
+                    ) : (
+                        <div className="table-container">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Student Username</th>
+                                        <th>Thesis Title</th>
+                                        <th>Semester</th>
+                                        <th>Supervisors</th>
+                                        <th>View Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {thesesSupervisors.length > 0 ? (
+                                        thesesSupervisors.map((entry, idx) => (
+                                            <tr key={idx}>
+                                                <td>{entry.student_username}</td>
+                                                <td>{entry.thesis_title}</td>
+                                                <td>{entry.semester}</td>
+                                                <td>{entry.supervisors && entry.supervisors.length > 0 ? entry.supervisors.join(', ') : '-'}</td>
+                                                <td>
+                                                    <Link to={`/users/${entry.student_username}`} className="btn btn-sm">
+                                                        View Details
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: 'center' }}>
+                                                No thesis-supervisor data found
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

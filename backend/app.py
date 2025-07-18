@@ -21,6 +21,9 @@ from backend.tasks.calendar_tasks import get_active_calendar_events
 from backend.tasks.check_reservation import check_reservation_activity
 from backend.tasks.check_usage import check_usage_activity
 from backend.tasks.parse_slurm_job_task import parse_and_store_slurm_log
+# --- BEGIN: Import disco scraper task function ---
+from backend.tasks.disco_scraper_task import run_disco_scraper
+# --- END: Import disco scraper task function ---
 
 # Create Flask app
 app = Flask(__name__, static_folder=None)
@@ -135,7 +138,6 @@ if __name__ == '__main__':
     elif args.action == 'run':
         init_database()  # Always ensure schema is up-to-date
         
-        
         DELAY = 120 
         if PORT == 5001:
             DELAY = 30
@@ -155,6 +157,10 @@ if __name__ == '__main__':
         # Register and start the slurm log parsing task
         scheduler.add_task("slurm_log_parser", parse_and_store_slurm_log, interval_minutes=10)
         print("Registered slurm_log_parser task (runs every 10 minutes)")
+
+        # Register and start the disco thesis scraper task
+        scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=1440)
+        print("Registered disco_thesis_scraper task (runs every 24 hours)")
         
         # Start the task scheduler
         scheduler.start()

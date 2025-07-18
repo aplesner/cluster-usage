@@ -13,6 +13,7 @@ from .email_config import (
     EMAIL_DOMAIN, ADMIN_EMAIL, CLUSTER_NAME, MAX_RETRIES, 
     RETRY_DELAY, MAX_EMAILS_PER_HOUR
 )
+from ..database.queries import get_user_thesis_and_supervisors
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +24,7 @@ IS_DEBUGGING = (PORT == 5001)
 def send_email(user: str, email_type: str = "reservation-not-used", context: str = "") -> bool:
     """
     Send email notification to user with rate limiting.
-    
-    Args:
-        user: Username to send email to
-        email_type: Type of email notification
-        context: Additional context information
-        
-    Returns:
-        bool: True if email was sent successfully, False otherwise
+    If the user has thesis info, CC all their supervisors.
     """
     try:
         # Check rate limiting
@@ -38,15 +32,30 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
             logger.warning(f"Rate limit exceeded for user {user}")
             return False
         
+        # Find supervisors for CC
+        cc_emails = []
+        try:
+            thesis_info = get_user_thesis_and_supervisors(DB_PATH, user)
+            if thesis_info and len(thesis_info) > 0:
+                supervisors = set()
+                for thesis in thesis_info:
+                    supervisors.update(thesis['supervisors'])
+                # Remove the user from CC if present
+                supervisors.discard(user)
+                cc_emails = [f"{sup}@{EMAIL_DOMAIN}" for sup in supervisors if sup]
+        except Exception as e:
+            logger.error(f"Error fetching supervisors for CC: {e}")
+            cc_emails = []
+        
         # For now, just log to console
-        logger.info(f"EMAIL NOTIFICATION - To: {user}, Type: {email_type}, Context: {context}")
+        logger.info(f"EMAIL NOTIFICATION - To: {user}, Type: {email_type}, Context: {context}, CC: {cc_emails}")
         
         # Store email notification in task logs
         store_email_notification(user, email_type, context)
         
         # Send actual email with retries
         for attempt in range(MAX_RETRIES):
-            if send_smtp_email(user, email_type, context):
+            if send_smtp_email(user, email_type, context, cc_emails=cc_emails):
                 logger.info(f"Email sent successfully to {user}")
                 update_rate_limit(user)
                 return True
@@ -84,21 +93,16 @@ def update_rate_limit(user: str) -> None:
         email_rate_limit[user] = []
     email_rate_limit[user].append(now)
 
-def send_smtp_email(recipient: str, email_type: str, context: str) -> bool:
+def send_smtp_email(recipient: str, email_type: str, context: str, cc_emails=None) -> bool:
     """
     Send email via SMTP using Google's SMTP server.
-    
-    Args:
-        recipient: Email recipient (username@domain.com)
-        email_type: Type of email notification
-        context: Additional context information
-        
-    Returns:
-        bool: True if email was sent successfully, False otherwise
+    Optionally CC additional recipients.
     """
+    if cc_emails is None:
+        cc_emails = []
 
     if IS_DEBUGGING:
-        logger.info(f"DEBUGGING - Email not sent to {recipient} bc of DEBUGGING")
+        logger.info(f"DEBUGGING - Email not sent to {recipient} bc of DEBUGGING (CC: {cc_emails})")
         return True
     
     try:
@@ -106,6 +110,8 @@ def send_smtp_email(recipient: str, email_type: str, context: str) -> bool:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = f"{recipient}@{EMAIL_DOMAIN}"
+        if cc_emails:
+            msg['Cc'] = ', '.join(cc_emails)
         msg['Subject'] = get_email_subject(email_type)
         
         # Create email body
@@ -120,8 +126,9 @@ def send_smtp_email(recipient: str, email_type: str, context: str) -> bool:
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             
             # Send email
+            to_addrs = [msg['To']] + cc_emails
             text = msg.as_string()
-            server.sendmail(EMAIL_SENDER, msg['To'], text)
+            server.sendmail(EMAIL_SENDER, to_addrs, text)
             
         return True
         
