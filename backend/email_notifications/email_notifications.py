@@ -25,23 +25,26 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
     """
     Send email notification to user with rate limiting.
     If the user has thesis info, CC all their supervisors.
+    If user contains '@', treat as full email address.
     """
     try:
-        # Check rate limiting
-        if not check_rate_limit(user):
+        # Check rate limiting (only for usernames, not raw emails)
+        if '@' not in user and not check_rate_limit(user):
             logger.warning(f"Rate limit exceeded for user {user}")
             return False
         
         # Find supervisors for CC
         cc_emails = []
         try:
-            thesis_info = get_user_thesis_and_supervisors(DB_PATH, user)
+            # Only look up supervisors if user is a username
+            lookup_user = user.split('@')[0] if '@' in user else user
+            thesis_info = get_user_thesis_and_supervisors(DB_PATH, lookup_user)
             if thesis_info and len(thesis_info) > 0:
                 supervisors = set()
                 for thesis in thesis_info:
                     supervisors.update(thesis['supervisors'])
                 # Remove the user from CC if present
-                supervisors.discard(user)
+                supervisors.discard(lookup_user)
                 cc_emails = [f"{sup}@{EMAIL_DOMAIN}" for sup in supervisors if sup]
         except Exception as e:
             logger.error(f"Error fetching supervisors for CC: {e}")
@@ -50,14 +53,16 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
         # For now, just log to console
         logger.info(f"EMAIL NOTIFICATION - To: {user}, Type: {email_type}, Context: {context}, CC: {cc_emails}")
         
-        # Store email notification in task logs
-        store_email_notification(user, email_type, context)
+        # Store email notification in task logs (only for usernames)
+        if '@' not in user:
+            store_email_notification(user, email_type, context)
         
         # Send actual email with retries
         for attempt in range(MAX_RETRIES):
             if send_smtp_email(user, email_type, context, cc_emails=cc_emails):
                 logger.info(f"Email sent successfully to {user}")
-                update_rate_limit(user)
+                if '@' not in user:
+                    update_rate_limit(user)
                 return True
             else:
                 logger.warning(f"Email attempt {attempt + 1} failed for {user}")
@@ -97,6 +102,7 @@ def send_smtp_email(recipient: str, email_type: str, context: str, cc_emails=Non
     """
     Send email via SMTP using Google's SMTP server.
     Optionally CC additional recipients.
+    If recipient contains '@', treat as full email address.
     """
     if cc_emails is None:
         cc_emails = []
@@ -109,7 +115,10 @@ def send_smtp_email(recipient: str, email_type: str, context: str, cc_emails=Non
         # Create message
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
-        msg['To'] = f"{recipient}@{EMAIL_DOMAIN}"
+        if '@' in recipient:
+            msg['To'] = recipient
+        else:
+            msg['To'] = f"{recipient}@{EMAIL_DOMAIN}"
         if cc_emails:
             msg['Cc'] = ', '.join(cc_emails)
         msg['Subject'] = get_email_subject(email_type)

@@ -253,6 +253,11 @@ def run_disco_scraper():
                         # Send a separate email to each supervisor (using username)
                         for username in supervisors:
                             send_email(username, email_type="student-non-ethz-email", context=context)
+                        # Also send an email to each non-ethz student email
+                        for email in student_emails.split(';'):
+                            email = email.strip()
+                            if email and 'ethz' not in email:
+                                send_email(email, email_type="student-non-ethz-email", context=context)
                 else:
                     logging.info("Supervisor notification for non-ethz student emails is disabled by config flag.")
             else:
