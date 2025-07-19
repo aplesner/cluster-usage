@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-from typing import Any
+from typing import Any, Union
 from backend.config import GPU_MAX_HOURS
 
 # Add the parent directory to the Python path
@@ -112,7 +112,7 @@ def get_all_machines(db_path: str):
     return machines
 
 
-def get_user_usage(db_path: str, username: str|None=None, user_id=None):
+def get_user_usage(db_path: str, username: Union[str, None]=None, user_id=None):
     """Get detailed usage statistics for a specific user"""
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
