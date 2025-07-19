@@ -225,7 +225,7 @@ def get_user_usage(db_path: str, username: Union[str, None]=None, user_id=None):
     return user
 
 
-def get_machine_usage(db_path: str, machine_name: str|None=None, machine_id=None):
+def get_machine_usage(db_path: str, machine_name: Union[str, None]=None, machine_id=None):
     """Get detailed usage statistics for a specific machine"""
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
@@ -671,7 +671,7 @@ def parse_runtime_to_hours(runtime_str):
 
 MAX_DURATION = GPU_MAX_HOURS
 
-def get_historic_usage_per_user(db_path: str, username: str|None = None):
+def get_historic_usage_per_user(db_path: str, username: Union[str, None] = None):
     """
     Get historic GPU usage per user, grouped by machine.
     For completed jobs (with end_time), only count the last GPU_MAX_HOURS of runtime.

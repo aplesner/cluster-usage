@@ -69,7 +69,7 @@ def init_database():
     print(f"Database initialized at {DB_PATH}")
     return True
 
-def process_logs(incoming_dir=INCOMING_LOGS_DIR, archive_dir: str|None=ARCHIVE_LOGS_DIR):
+def process_logs(incoming_dir=INCOMING_LOGS_DIR, archive_dir: Union[str, None]=ARCHIVE_LOGS_DIR):
     """Process all log files in the incoming directory"""
     log_files = find_log_files(incoming_dir)
     
