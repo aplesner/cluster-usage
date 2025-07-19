@@ -1,4 +1,5 @@
 import os
+from typing import Union
 import sys
 import argparse
 import sqlite3

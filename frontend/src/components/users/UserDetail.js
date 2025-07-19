@@ -97,6 +97,11 @@ const UserDetail = () => {
 }, [username]);
 
 const ThesisInfoDisplay = ({ thesisInfo, thesisError }) => {
+  // If the user is a staff member, we don't display thesis information
+  if (userData && userData.user_role && userData.user_role.toLowerCase() === 'staff') {
+    return null; // Don't display thesis information for staff
+  }
+
   if (thesisError || !thesisInfo || thesisInfo.length === 0) {
     console.warn('No thesis information available or error occurred:', thesisError);
     return (
@@ -105,11 +110,10 @@ const ThesisInfoDisplay = ({ thesisInfo, thesisError }) => {
           <h3>Thesis Information</h3>
         </div>
         <div className="card-body">
-          <p>No thesis information available... 123</p>
+          <p>No thesis information available... They might have not registered with an ethz email...</p>
           {thesisError && <p className="text-danger">{thesisError}</p>}
           {/* Display a message if no thesis information is available */}
           {/* <p>No thesis information available for this user.</p> */}
-          <p>No thesis information available for this user. {thesisInfo}</p>
         </div>
       </div>
     );
@@ -266,12 +270,13 @@ const chartOptions = {
   return (
     <div className="user-detail-container">
       {/* Thesis and Supervisor Info at the top */}
-      <ThesisInfoDisplay thesisInfo={thesisInfo} thesisError={thesisError} />
       
       <div className="page-header">
         <h2 className="page-title">User Details: {username}</h2>
         <Link to="/users" className="btn btn-secondary">Back to Users</Link>
       </div>
+
+      <ThesisInfoDisplay thesisInfo={thesisInfo} thesisError={thesisError} />
 
       <div className="card">
         <div className="card-header">
