@@ -11,9 +11,9 @@ from ..config import DB_PATH, PORT
 from .email_config import (
     SMTP_SERVER, SMTP_PORT, EMAIL_SENDER, EMAIL_PASSWORD, 
     EMAIL_DOMAIN, ADMIN_EMAIL, CLUSTER_NAME, MAX_RETRIES, 
-    RETRY_DELAY, MAX_EMAILS_PER_HOUR
+    RETRY_DELAY, MAX_EMAILS_PER_HOUR, ENABLE_EMAILS
 )
-from ..database.queries import get_user_thesis_and_supervisors
+# from ..tasks.disco_scraper_task import get_user_thesis_details # TODO
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,9 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
     If the user has thesis info, CC all their supervisors.
     If user contains '@', treat as full email address.
     """
+    if not ENABLE_EMAILS:
+        logger.info("Emails disabled")
+        return False
     try:
         # Check rate limiting (only for usernames, not raw emails)
         if '@' not in user and not check_rate_limit(user):
@@ -38,7 +41,7 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
         try:
             # Only look up supervisors if user is a username
             lookup_user = user.split('@')[0] if '@' in user else user
-            thesis_info = get_user_thesis_and_supervisors(DB_PATH, lookup_user)
+            thesis_info = None # get_user_thesis_details(lookup_user) # TODO
             if thesis_info and len(thesis_info) > 0:
                 supervisors = set()
                 for thesis in thesis_info:

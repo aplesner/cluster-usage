@@ -1,5 +1,7 @@
+import logging
 import os
 import sys
+from typing import Any
 from backend.config import GPU_MAX_HOURS
 
 # Add the parent directory to the Python path
@@ -110,7 +112,7 @@ def get_all_machines(db_path: str):
     return machines
 
 
-def get_user_usage(db_path: str, username: str=None, user_id=None):
+def get_user_usage(db_path: str, username: str|None=None, user_id=None):
     """Get detailed usage statistics for a specific user"""
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
@@ -223,7 +225,7 @@ def get_user_usage(db_path: str, username: str=None, user_id=None):
     return user
 
 
-def get_machine_usage(db_path: str, machine_name: str=None, machine_id=None):
+def get_machine_usage(db_path: str, machine_name: str|None=None, machine_id=None):
     """Get detailed usage statistics for a specific machine"""
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
@@ -424,7 +426,7 @@ def get_size_distribution(db_path: str):
     """
     
     cursor.execute(query)
-    size_dist = {
+    size_dist: dict[Any, Any] = {
         'overall': [dict(row) for row in cursor.fetchall()]
     }
     
@@ -669,7 +671,7 @@ def parse_runtime_to_hours(runtime_str):
 
 MAX_DURATION = GPU_MAX_HOURS
 
-def get_historic_usage_per_user(db_path: str, username: str = None):
+def get_historic_usage_per_user(db_path: str, username: str|None = None):
     """
     Get historic GPU usage per user, grouped by machine.
     For completed jobs (with end_time), only count the last GPU_MAX_HOURS of runtime.
@@ -764,51 +766,53 @@ def get_historic_usage_per_user(db_path: str, username: str = None):
     finally:
         conn.close()
 
-def get_user_thesis_and_supervisors(db_path, username):
-    """Return thesis info and supervisors for a given student username from UserSupervisors table."""
-    conn = get_db_connection(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT thesis_title, semester, student_email, GROUP_CONCAT(DISTINCT supervisor_username) as supervisors
-        FROM UserSupervisors
-        WHERE student_username = ?
-        GROUP BY thesis_title, semester, student_email
-        ORDER BY thesis_title
-    ''', (username,))
-    rows = cursor.fetchall()
-    conn.close()
-    if not rows:
-        return None
-    # If multiple theses, return all; else just one
-    result = []
-    for row in rows:
-        result.append({
-            'thesis_title': row['thesis_title'],
-            'semester': row['semester'],
-            'student_email': row['student_email'],
-            'supervisors': row['supervisors'].split(',') if row['supervisors'] else []
-        })
-    return result
+# def get_user_thesis_and_supervisors(db_path, username):
+#     """Return thesis info and supervisors for a given student username from Theses table where is_past is False."""
+#     conn = get_db_connection(db_path)
+#     cursor = conn.cursor()
+#     cursor.execute('''
+#         SELECT thesis_title, semester, student_email, GROUP_CONCAT(DISTINCT supervisor_username) as supervisors
+#         FROM Theses
+#         WHERE student_username = ? AND is_past = 0
+#         GROUP BY thesis_title, semester, student_email
+#         ORDER BY thesis_title
+#     ''', (username,))
+#     rows = cursor.fetchall()
+#     conn.close()
+#     if not rows:
+#         logging.warning(f"No active thesis found for user {username}")
+#         return None
+#     # If multiple theses, return all; else just one
+#     result = []
+#     for row in rows:
+#         result.append({
+#             'thesis_title': row['thesis_title'],
+#             'semester': row['semester'],
+#             'student_email': row['student_email'],
+#             'supervisors': row['supervisors'].split(',') if row['supervisors'] else []
+#         })
+#     logging.info(f"Found {len(result)} active thesis(es) for user {username}")
+#     return result
 
-def get_all_theses_and_supervisors(db_path):
-    """Return all users with their theses and supervisors from UserSupervisors table."""
-    conn = get_db_connection(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT student_username, thesis_title, semester, student_email, GROUP_CONCAT(DISTINCT supervisor_username) as supervisors
-        FROM UserSupervisors
-        GROUP BY student_username, thesis_title, semester, student_email
-        ORDER BY student_username, thesis_title
-    ''')
-    rows = cursor.fetchall()
-    conn.close()
-    result = []
-    for row in rows:
-        result.append({
-            'student_username': row['student_username'],
-            'thesis_title': row['thesis_title'],
-            'semester': row['semester'],
-            'student_email': row['student_email'],
-            'supervisors': row['supervisors'].split(',') if row['supervisors'] else []
-        })
-    return result
+# def get_all_theses_and_supervisors(db_path):
+#     """Return all users with their theses and supervisors from UserSupervisors table."""
+#     conn = get_db_connection(db_path)
+#     cursor = conn.cursor()
+#     cursor.execute('''
+#         SELECT student_username, thesis_title, semester, student_email, GROUP_CONCAT(DISTINCT supervisor_username) as supervisors
+#         FROM UserSupervisors
+#         GROUP BY student_username, thesis_title, semester, student_email
+#         ORDER BY student_username, thesis_title
+#     ''')
+#     rows = cursor.fetchall()
+#     conn.close()
+#     result = []
+#     for row in rows:
+#         result.append({
+#             'student_username': row['student_username'],
+#             'thesis_title': row['thesis_title'],
+#             'semester': row['semester'],
+#             'student_email': row['student_email'],
+#             'supervisors': row['supervisors'].split(',') if row['supervisors'] else []
+#         })
+#     return result

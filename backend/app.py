@@ -69,7 +69,7 @@ def init_database():
     print(f"Database initialized at {DB_PATH}")
     return True
 
-def process_logs(incoming_dir=INCOMING_LOGS_DIR, archive_dir=ARCHIVE_LOGS_DIR):
+def process_logs(incoming_dir=INCOMING_LOGS_DIR, archive_dir: str|None=ARCHIVE_LOGS_DIR):
     """Process all log files in the incoming directory"""
     log_files = find_log_files(incoming_dir)
     
@@ -144,11 +144,11 @@ if __name__ == '__main__':
 
         # Register and start the calendar task
         scheduler.add_task("calendar_checker", get_active_calendar_events, interval_minutes=10)
-        print("Registered calendar_checker task (runs every minute)")
-        
+        print("Registered calendar_checker task (runs every 10 minutes)")
+
         # Register and start the reservation check task
         scheduler.add_task("reservation_checker", check_reservation_activity, interval_minutes=4*60, initial_delay=DELAY)
-        print("Registered reservation_checker task (runs every minutes)")
+        print("Registered reservation_checker task (runs every 4 hours)")
 
         # Register and start the usage check task
         scheduler.add_task("usage_checker", check_usage_activity, interval_minutes=4*60, initial_delay=DELAY)
@@ -159,8 +159,8 @@ if __name__ == '__main__':
         print("Registered slurm_log_parser task (runs every 10 minutes)")
 
         # Register and start the disco thesis scraper task
-        scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=1440)
-        print("Registered disco_thesis_scraper task (runs every 24 hours)")
+        scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=7*24*60, initial_delay=DELAY*50)
+        # print("Registered disco_thesis_scraper task (runs every 7 days)")
         
         # Start the task scheduler
         scheduler.start()

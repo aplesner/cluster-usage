@@ -116,6 +116,13 @@ export const getEmailNotifications = (page = 1, limit = 20) =>
 export const getEmailCountsByUser = (startTime, endTime) =>
   fetchData(`/email-notifications/counts?start_time=${encodeURIComponent(startTime)}&end_time=${encodeURIComponent(endTime)}`);
 
+/** * Fetch thesis details for a specific user
+ * @param {string} username - Username to get thesis details for
+ * @returns {Promise} - Promise with the thesis details data
+ */
+export const fetchThesisDetails = (username) =>
+  fetchData(`/users/${username}/thesis-details`);
+
 const api = {
   getUsers,
   getStats,
@@ -130,6 +137,7 @@ const api = {
   getTaskLogs,
   getEmailNotifications,
   getEmailCountsByUser,
+  fetchThesisDetails,
   async getActiveCalendarEvents() {
     const response = await fetch('/api/calendar/active');
     if (!response.ok) {

@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, current_app, send_from_directory
 import os
 import sys
 import json
+import logging
 from datetime import datetime, timedelta
 
 # Add the parent directory to the Python path
@@ -11,7 +12,7 @@ from backend.database.queries import (
     get_database_stats, get_all_users, get_all_machines,
     get_user_usage, get_machine_usage, get_time_usage, get_size_distribution,
     get_time_stats_for_user, get_top_users_recent_logs, get_historic_usage,
-    get_historic_usage_per_user, get_user_thesis_and_supervisors, get_all_theses_and_supervisors
+    get_historic_usage_per_user, # get_user_thesis_and_supervisors, get_all_theses_and_supervisors
 )
 from backend.tasks.periodic_tasks import get_task_logs, get_task_logs_count
 from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
@@ -407,13 +408,15 @@ def get_user_job_history(username, db_path, limit=100):
     finally:
         conn.close()
 
-@api.route('/users/<username>/thesis-supervisors', methods=['GET'])
-def get_user_thesis_supervisors(username):
-    db_path = current_app.config['DB_PATH']
-    result = get_user_thesis_and_supervisors(db_path, username)
-    if not result:
-        return jsonify({'error': 'No thesis or supervisor information found'}), 404
-    return jsonify(result)
+# @api.route('/users/<username>/thesis-supervisors', methods=['GET'])
+# def get_user_thesis_supervisors(username):
+#     logging.info(f"Fetching thesis and supervisors for user: {username}")
+#     db_path = current_app.config['DB_PATH']
+#     result = get_user_thesis_and_supervisors(db_path, username)
+#     if not result:
+#         logging.warning(f"No thesis or supervisor information found for user: {username}")
+#         return jsonify({'error': 'No thesis or supervisor information found'}), 404
+#     return jsonify(result)
 
 @api.route('/users/<username>/historic-usage', methods=['GET'])
 def get_user_historic_usage(username):
@@ -477,9 +480,123 @@ def get_users_emailed_last_12h():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@api.route('/theses-supervisors', methods=['GET'])
-def get_all_theses_supervisors():
-    db_path = current_app.config['DB_PATH']
-    result = get_all_theses_and_supervisors(db_path)
-    return jsonify(result)
 
+# @api.route('/theses-supervisors', methods=['GET'])
+# def get_all_theses_supervisors():
+#     db_path = current_app.config['DB_PATH']
+#     result = get_all_theses_and_supervisors(db_path)
+#     return jsonify(result)
+
+
+@api.route('/users/<username>/thesis-details', methods=['GET'])
+def get_user_thesis_details_api(username: str):
+    """
+    Get comprehensive thesis information for a user including both 
+    supervised theses and theses where they are a student.
+    
+    Args:
+        username: The username to fetch thesis information for
+        
+    Returns:
+        JSON response with thesis details or error message
+    """
+    # logging.info(f"Fetching thesis details for user: {username} test")
+    # print(f"Fetching thesis details for user: {username} test")
+    try:
+        from backend.tasks.disco_scraper_task import get_user_thesis_details
+        
+        thesis_details = get_user_thesis_details(username)
+        
+        if not thesis_details:
+            return jsonify({
+                'message': 'No thesis information found for this user',
+                'theses': []
+            })
+        
+        # Separate current and past theses
+        current_theses = [t for t in thesis_details if not t['is_past']]
+        past_theses = [t for t in thesis_details if t['is_past']]
+        
+        # Separate by role
+        student_theses = [t for t in thesis_details if t['role'] != 'staff']
+        supervised_theses = [t for t in thesis_details if t['role'] == 'staff']
+
+        # Prepare the response
+        response = jsonify({
+            'username': username,
+            'total_theses': len(thesis_details),
+            'current_theses': current_theses,
+            'past_theses': past_theses,
+            'as_student': student_theses,
+            'as_supervisor': supervised_theses,
+            'theses': thesis_details
+        })
+        logging.info(f"Successfully fetched thesis details for user: {username}")
+        # print(response.get_data(as_text=True))  # For debugging purposes
+
+        return response
+
+    except Exception as e:
+        logging.error(f"Error fetching thesis details for user {username}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@api.route('/theses/all', methods=['GET'])
+def get_all_theses():
+    """
+    Get all thesis information from the database.
+    
+    Returns:
+        JSON response with all thesis data
+    """
+    try:
+        db_path = current_app.config['DB_PATH']
+        conn = get_db_connection(db_path)
+        cursor = conn.cursor()
+        
+        # Get all theses with their student-supervisor relationships
+        cursor.execute('''
+            SELECT DISTINCT
+                t.title,
+                t.icon_url,
+                t.semester,
+                t.is_past,
+                GROUP_CONCAT(DISTINCT us.supervisor_username) as supervisors,
+                GROUP_CONCAT(DISTINCT us.student_username) as students,
+                GROUP_CONCAT(DISTINCT us.student_email) as student_emails
+            FROM Theses t
+            LEFT JOIN UserSupervisors us ON t.title = us.thesis_title AND t.semester = us.semester
+            GROUP BY t.thesis_id, t.title, t.icon_url, t.semester, t.is_past
+            ORDER BY t.is_past ASC, t.semester DESC
+        ''')
+        
+        theses = []
+        for row in cursor.fetchall():
+            thesis = {
+                'title': row[0],
+                'icon_url': row[1] or '',
+                'semester': row[2],
+                'is_past': bool(row[3]),
+                'supervisors': row[4].split(',') if row[4] else [],
+                'students': row[5].split(',') if row[5] else [],
+                'student_emails': row[6].split(',') if row[6] else []
+            }
+            theses.append(thesis)
+        
+        conn.close()
+        
+        # Separate current and past
+        current_theses = [t for t in theses if not t['is_past']]
+        past_theses = [t for t in theses if t['is_past']]
+        
+        return jsonify({
+            'total_theses': len(theses),
+            'current_count': len(current_theses),
+            'past_count': len(past_theses),
+            'current_theses': current_theses,
+            'past_theses': past_theses,
+            'all_theses': theses
+        })
+        
+    except Exception as e:
+        # logging.error(f"Error fetching all theses: {e}")
+        return jsonify({'error': str(e)}), 500

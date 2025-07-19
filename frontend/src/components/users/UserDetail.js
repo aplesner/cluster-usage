@@ -71,88 +71,193 @@ const UserDetail = () => {
   }, [username]);
 
   useEffect(() => {
-    const fetchThesisInfo = async () => {
-      try {
-        const data = await api.getUserThesisSupervisors(username);
-        setThesisInfo(data);
-        setThesisError(null);
-      } catch (err) {
-        setThesisInfo(null);
-        setThesisError('No thesis information');
+  const fetchThesisInfo = async () => {
+    try {
+      console.log(`Fetching thesis details for user: ${username}`);
+      
+      const data = await api.fetchThesisDetails(username);
+      
+      console.log('Fetched thesis data:', data);
+
+      // Check if data is valid and log it
+      if (!data || !data.theses) {
+        throw new Error('No thesis details found');
       }
-    };
-    fetchThesisInfo();
-  }, [username]);
-
-  // Format date for chart display
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+      // Set thesis info state
+      setThesisInfo(data.theses);
+      setThesisError(null);
+      // Log the fetched thesis data for debugging
+    } catch (err) {
+      console.error('Error fetching thesis info:', err);
+      setThesisInfo(null);
+      setThesisError('No thesis information available');
+    }
   };
+  fetchThesisInfo();
+}, [username]);
 
-  // Prepare chart data
-  const prepareChartData = () => {
-    const labels = timeData.map(item => formatDate(item.timestamp));
-    const operations = timeData.map(item => item.total_operations);
-    
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'IO Operations',
-          data: operations,
-          fill: false,
-          backgroundColor: '#3498db',
-          borderColor: '#3498db',
-          tension: 0.1
-        }
-      ]
-    };
-  };
+const ThesisInfoDisplay = ({ thesisInfo, thesisError }) => {
+  if (thesisError || !thesisInfo || thesisInfo.length === 0) {
+    console.warn('No thesis information available or error occurred:', thesisError);
+    return (
+      <div className="card">
+        <div className="card-header">
+          <h3>Thesis Information</h3>
+        </div>
+        <div className="card-body">
+          <p>No thesis information available... 123</p>
+          {thesisError && <p className="text-danger">{thesisError}</p>}
+          {/* Display a message if no thesis information is available */}
+          {/* <p>No thesis information available for this user.</p> */}
+          <p>No thesis information available for this user. {thesisInfo}</p>
+        </div>
+      </div>
+    );
+  }
 
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: `IO Operations Over Time for ${username}`
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            return `Operations: ${context.parsed.y}`;
-          }
-        }
+  // Display thesis information in a table using the `theses` prop
+  const allTheses = thesisInfo.map(thesis => ({
+    icon_url: thesis.icon_url || '',
+    thesis_title: thesis.thesis_title || 'N/A',
+    semester: thesis.semester || 'N/A',
+    role: thesis.role || 'N/A',
+    supervisors: thesis.supervisors || [],
+    // If student email is not an array, convert it to an array
+    // If student email is an array, use it directly
+    student_email: Array.isArray(thesis.student_email) ? thesis.student_email : [thesis.student_email || 'N/A'],
+    status: thesis.is_past ? 'Past' : 'Current'
+  }));
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h3>Thesis Information</h3>
+      </div>
+      <div className="card-body">
+        {allTheses.length > 0 ? (
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Thesis Title</th>
+                  <th>Semester</th>
+                  <th>Role</th>
+                  <th>Supervisors</th>
+                  <th>Student E-mail</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allTheses.map((thesis, index) => (
+                  <tr key={index}>
+                    <td>
+                      {thesis.icon_url ? (
+                        <img src={thesis.icon_url} alt={thesis.thesis_title} className="thesis-icon" />
+                      ) : (
+                        <div className="thesis-icon-placeholder">No Image</div>
+                      )}
+                    </td>
+                    <td>{thesis.thesis_title}</td>
+                    <td>{thesis.semester}</td>
+                    <td>{thesis.role}</td>
+                    <td>
+                      {thesis.supervisors.length > 0 ? (
+                        thesis.supervisors.join(', ')
+                      ) : (
+                        'N/A'
+                      )}
+                    </td>
+                    <td>
+                      {thesis.student_email.length > 0 ? (
+                        thesis.student_email.join(', ')
+                      ) : (
+                        'N/A'
+                      )}
+                    </td>
+                    <td>{thesis.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>No thesis information available for this user.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Format date for chart display
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// Prepare chart data
+const prepareChartData = () => {
+  const labels = timeData.map(item => formatDate(item.timestamp));
+  const operations = timeData.map(item => item.total_operations);
+  
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'IO Operations',
+        data: operations,
+        fill: false,
+        backgroundColor: '#3498db',
+        borderColor: '#3498db',
+        tension: 0.1
       }
+    ]
+  };
+};
+
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Number of Operations'
-        },
-        ticks: {
-          precision: 0
-        }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Time'
+    title: {
+      display: true,
+      text: `IO Operations Over Time for ${username}`
+    },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          return `Operations: ${context.parsed.y}`;
         }
       }
     }
-  };
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      title: {
+        display: true,
+        text: 'Number of Operations'
+      },
+      ticks: {
+        precision: 0
+      }
+    },
+    x: {
+      title: {
+        display: true,
+        text: 'Time'
+      }
+    }
+  }
+};
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -161,24 +266,8 @@ const UserDetail = () => {
   return (
     <div className="user-detail-container">
       {/* Thesis and Supervisor Info at the top */}
-      <div style={{ marginBottom: 20 }}>
-        {thesisInfo && thesisInfo.length > 0 ? (
-          <div style={{ background: '#e3f0ff', color: '#155fa0', borderRadius: 8, padding: 16, border: '1px solid #b6d4fe' }}>
-            <strong>Thesis Information</strong>
-            {thesisInfo.map((thesis, idx) => (
-              <div key={idx} style={{ marginTop: 8 }}>
-                <div><strong>Title:</strong> {thesis.thesis_title}</div>
-                <div><strong>Semester:</strong> {thesis.semester}</div>
-                <div><strong>Supervisors:</strong> {thesis.supervisors && thesis.supervisors.length > 0 ? thesis.supervisors.join(', ') : '-'}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ background: '#f3f3f3', color: '#555', borderRadius: 8, padding: 16, border: '1px solid #ddd' }}>
-            No thesis information
-          </div>
-        )}
-      </div>
+      <ThesisInfoDisplay thesisInfo={thesisInfo} thesisError={thesisError} />
+      
       <div className="page-header">
         <h2 className="page-title">User Details: {username}</h2>
         <Link to="/users" className="btn btn-secondary">Back to Users</Link>

@@ -6,10 +6,10 @@ import time
 import re
 import logging
 from backend.email_notifications.email_notifications import send_email
-from backend.config import DB_PATH, NOTIFY_SUPERVISORS_ON_NON_ETHZ_STUDENT_EMAILS
+from backend.config import DATA_DIR, DB_PATH, NOTIFY_SUPERVISORS_ON_NON_ETHZ_STUDENT_EMAILS
 from backend.database.schema import get_db_connection
 
-def extract_theses_data():
+def extract_theses_data() -> pd.DataFrame:
     """
     Extract thesis information from current and past DISCO website pages.
     Save results to a pandas DataFrame and CSV file.
@@ -178,7 +178,7 @@ def extract_theses_data():
         df = pd.DataFrame(all_theses_data)
         
         # Save to CSV
-        csv_path = 'disco_all_theses.csv'
+        csv_path = f'{DATA_DIR}/disco_all_theses.csv'
         df.to_csv(csv_path, index=False)
         logging.info(f"Data saved to {csv_path}")
         
@@ -188,72 +188,54 @@ def extract_theses_data():
         # Clean up browser
         driver.quit()
 
-def run_disco_scraper():
+def run_disco_scraper() -> str:
     logging.info('Running DISCO thesis scraper task...')
     try:
         df = extract_theses_data()
-        logging.info(f'DISCO thesis scraper completed. Extracted {len(df) if df is not None else 0} theses.')
         
-        # Filter for current theses only
-        if df is not None:
+        if df is not None and not df.empty:
+            # Store thesis data in database
+            print(df.head(5))
+            store_thesis_data_in_database(df)
+            
+            logging.info(f'DISCO thesis scraper completed. Extracted {len(df)} theses.')
+            
+            # Filter for current theses only for email notifications
             current_theses = df[df['is_past'] == False]
             non_ethz_entries = []
-            user_supervisor_pairs = []
+            
             for _, row in current_theses.iterrows():
                 emails = row['student_emails'].split(';') if row['student_emails'] else []
-                student_names = row['student_names'].split(';') if row['student_names'] else []
-                supervisors = [s.strip() for s in row['supervisors'].split(',') if s.strip()]
-                thesis_title = row['title']
-                semester = row['semester']
-                # For each student email/name, pair with each supervisor
-                for student_email, student_name in zip(emails, student_names):
-                    student_email = student_email.strip()
-                    student_name = student_name.strip()
-                    # Only process if student_email contains 'ethz'
-                    if 'ethz' not in student_email:
-                        continue
-                    # Use username before @ if email, else use name
-                    if '@' in student_email:
-                        student_username = student_email.split('@')[0]
-                    else:
-                        student_username = student_name
-                    for supervisor in supervisors:
-                        user_supervisor_pairs.append((student_username, supervisor, thesis_title, semester, student_email))
                 # Check if any email does not contain 'ethz'
-                if any('ethz' not in email for email in emails):
+                if any('ethz' not in email.strip() for email in emails if email.strip()):
                     non_ethz_entries.append(row.to_dict())
-            # Store user-supervisor pairs in the database
-            conn = get_db_connection(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM UserSupervisors')
-            for student_username, supervisor_username, thesis_title, semester, student_email in user_supervisor_pairs:
-                cursor.execute(
-                    'INSERT OR IGNORE INTO UserSupervisors (student_username, supervisor_username, thesis_title, semester, student_email) VALUES (?, ?, ?, ?, ?)',
-                    (student_username, supervisor_username, thesis_title, semester, student_email)
-                )
-            conn.commit()
-            conn.close()
+            
+            # Handle non-ETH email notifications
             if non_ethz_entries:
-                logging.info(f"Current theses with non-ethz student emails: {non_ethz_entries}")
-                # Send email to supervisors for each entry, if flag is enabled
+                logging.info(f"Current theses with non-ethz student emails: {len(non_ethz_entries)}")
+                
                 if NOTIFY_SUPERVISORS_ON_NON_ETHZ_STUDENT_EMAILS:
                     for entry in non_ethz_entries:
                         supervisors = [s.strip() for s in entry['supervisors'].split(',') if s.strip()]
                         if not supervisors:
                             logging.warning(f"No supervisors found for thesis: {entry['title']}")
                             continue
+                        
                         student_names = entry['student_names']
                         student_emails = entry['student_emails']
                         thesis_title = entry['title']
+                        
                         context = (
                             f"Thesis: {thesis_title}\n"
                             f"Student(s): {student_names} ({student_emails})\n"
                             "Please remind your student(s) to use their ETH email address for thesis registration."
                         )
-                        # Send a separate email to each supervisor (using username)
+                        
+                        # Send email to each supervisor
                         for username in supervisors:
                             send_email(username, email_type="student-non-ethz-email", context=context)
-                        # Also send an email to each non-ethz student email
+                        
+                        # Send email to each non-ETH student email
                         for email in student_emails.split(';'):
                             email = email.strip()
                             if email and 'ethz' not in email:
@@ -262,12 +244,195 @@ def run_disco_scraper():
                     logging.info("Supervisor notification for non-ethz student emails is disabled by config flag.")
             else:
                 logging.info("All current theses have only ethz student emails.")
-        
-        return f'Extracted {len(df) if df is not None else 0} theses.'
+            
+            return f'Extracted and stored {len(df)} theses successfully.'
+        else:
+            logging.warning('No thesis data extracted.')
+            return 'No thesis data extracted.'
+            
     except Exception as e:
         logging.error(f'Error in DISCO thesis scraper: {e}')
         return f'Error: {e}'
 
+
 def register_disco_scraper_task(scheduler):
     """Register the DISCO thesis scraper task to run daily (every 1440 minutes)"""
     scheduler.add_task('disco_thesis_scraper', run_disco_scraper, interval_minutes=1440) 
+
+
+def store_thesis_data_in_database(df: pd.DataFrame) -> None:
+    """
+    Store thesis data from DataFrame into the database.
+    
+    Args:
+        df: DataFrame containing thesis data with columns:
+            - title, supervisors, semester, student_names, student_emails, is_past, icon_url
+    """
+    if df is None or df.empty:
+        logging.warning("No thesis data to store in database")
+        return
+    
+    conn = get_db_connection(DB_PATH)
+    cursor = conn.cursor()
+    
+    try:
+        # Clear existing thesis data
+        cursor.execute('DELETE FROM UserSupervisors')
+        
+        # Also create a dedicated Theses table if it doesn't exist
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS Theses (
+            thesis_id INTEGER PRIMARY KEY,
+            title TEXT NOT NULL,
+            icon_url TEXT,
+            semester TEXT,
+            is_past INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
+        cursor.execute('DELETE FROM Theses')
+        
+        thesis_id_counter = 1
+        
+        for _, row in df.iterrows():
+            # Insert thesis into Theses table
+            cursor.execute('''
+                INSERT INTO Theses (thesis_id, title, icon_url, semester, is_past)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (
+                thesis_id_counter,
+                row['title'],
+                row.get('icon_url', ''),
+                row['semester'],
+                1 if row['is_past'] else 0
+            ))
+            
+            # Process student-supervisor relationships
+            supervisors = [s.strip() for s in row['supervisors'].split(',') if s.strip()]
+            student_emails = [e.strip() for e in row['student_emails'].split(';') if e.strip()]
+            student_names = [n.strip() for n in row['student_names'].split(';') if n.strip()]
+            
+            # Create student-supervisor pairs
+            for i, student_email in enumerate(student_emails):
+                student_name = student_names[i] if i < len(student_names) else ""
+                
+                # Extract username from email (only for ETH emails)
+                if 'ethz' in student_email and '@' in student_email:
+                    student_username = student_email.split('@')[0]
+                else:
+                    # Skip non-ETH emails or use name as fallback
+                    continue
+                
+                # Insert each student-supervisor relationship
+                for supervisor_username in supervisors:
+                    cursor.execute('''
+                        INSERT OR IGNORE INTO UserSupervisors 
+                        (student_username, supervisor_username, thesis_title, semester, student_email)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (
+                        student_username,
+                        supervisor_username,
+                        row['title'],
+                        row['semester'],
+                        student_email
+                    ))
+            
+            thesis_id_counter += 1
+        
+        conn.commit()
+        logging.info(f"Successfully stored {len(df)} theses in database")
+        
+    except Exception as e:
+        logging.error(f"Error storing thesis data in database: {e}")
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def get_user_thesis_details(username: str) -> list[dict]:
+    """
+    Get detailed thesis information for a specific user.
+    
+    Args:
+        username: The username to fetch thesis information for
+        
+    Returns:
+        List[Dict]: List of thesis details including supervisors, thesis info, etc.
+    """
+    conn = get_db_connection(DB_PATH)
+    cursor = conn.cursor()
+    
+    try:
+        # Get thesis information where user is a student
+        cursor.execute('''
+            SELECT DISTINCT 
+                us.thesis_title,
+                us.semester,
+                us.student_email,
+                t.icon_url,
+                t.is_past,
+                GROUP_CONCAT(DISTINCT us.supervisor_username) as supervisors
+            FROM UserSupervisors us
+            LEFT JOIN Theses t ON us.thesis_title = t.title AND us.semester = t.semester
+            WHERE us.student_username = ?
+            GROUP BY us.thesis_title, us.semester, us.student_email, t.icon_url, t.is_past
+            ORDER BY t.is_past ASC, us.semester DESC
+        ''', (username,))
+        
+        student_theses = cursor.fetchall()
+        
+        # Get thesis information where user is a supervisor
+        cursor.execute('''
+            SELECT DISTINCT 
+                us.thesis_title,
+                us.semester,
+                t.icon_url,
+                t.is_past,
+                GROUP_CONCAT(DISTINCT us.student_username) as students,
+                GROUP_CONCAT(DISTINCT us.student_email) as student_emails
+            FROM UserSupervisors us
+            LEFT JOIN Theses t ON us.thesis_title = t.title AND us.semester = t.semester
+            WHERE us.supervisor_username = ?
+            GROUP BY us.thesis_title, us.semester, t.icon_url, t.is_past
+            ORDER BY t.is_past ASC, us.semester DESC
+        ''', (username,))
+        
+        supervised_theses = cursor.fetchall()
+        
+        result = []
+        
+        # Add theses where user is a student
+        for row in student_theses:
+            result.append({
+                'thesis_title': row[0],
+                'semester': row[1],
+                'role': 'student',
+                'student_email': row[2],
+                'icon_url': row[3] or '',
+                'is_past': bool(row[4]),
+                'supervisors': row[5].split(',') if row[5] else [],
+                'students': []
+            })
+        
+        # Add theses where user is a supervisor
+        for row in supervised_theses:
+            result.append({
+                'thesis_title': row[0],
+                'semester': row[1],
+                'role': 'supervisor',
+                'icon_url': row[2] or '',
+                'is_past': bool(row[3]),
+                'supervisors': [username],
+                'students': row[4].split(',') if row[4] else [],
+                'student_emails': row[5].split(',') if row[5] else []
+            })
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error fetching thesis details for user {username}: {e}")
+        return []
+    finally:
+        conn.close()

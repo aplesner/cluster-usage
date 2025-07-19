@@ -56,8 +56,8 @@ fi
 
 log "Starting frontend development server..."
 # Use the development-specific script
-npm run dev &
-FRONTEND_PID=$!
+npm run dev # &
+# FRONTEND_PID=$!
 cd ..
 
 # Function to cleanup background processes

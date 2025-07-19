@@ -26,3 +26,5 @@ RETRY_DELAY = 5  # seconds
 
 # Rate limiting (emails per hour per user)
 MAX_EMAILS_PER_HOUR = 5 
+
+ENABLE_EMAILS = False
