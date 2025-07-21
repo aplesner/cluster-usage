@@ -58,7 +58,7 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
         
         # Store email notification in task logs (only for usernames)
         if '@' not in user:
-            store_email_notification(user, email_type, context)
+            store_email_notification(user, email_type, context, cc_emails)
         
         # Send actual email with retries
         for attempt in range(MAX_RETRIES):
@@ -171,6 +171,10 @@ def get_email_subject(email_type: str) -> str:
 
 def create_email_body(recipient: str, email_type: str, context: str) -> str:
     """Create HTML email body based on email type and context."""
+    supervisor_note = '''<div style="margin-top:18px; padding:12px; background:#e3f2fd; border-radius:6px;">
+        <b>Supervisor Action:</b> If you are a supervisor and your student's email is not username@ethz.ch, please update it here:<br />
+        <a href="https://tik-db.ee.ethz.ch/db/restricted/tik/?db=students&form=form_search_students_to_edit" target="_blank">https://tik-db.ee.ethz.ch/db/restricted/tik/?db=students&form=form_search_students_to_edit</a>
+    </div>'''
     
     if email_type == "reservation-not-used":
         return f"""
@@ -320,6 +324,42 @@ def create_email_body(recipient: str, email_type: str, context: str) -> str:
         </body>
         </html>
         """
+    elif email_type == "student-non-ethz-email":
+        return f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .alert {{ background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .details {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>{CLUSTER_NAME} - Student Email Alert</h2>
+                    <p>Hello {recipient},</p>
+                </div>
+                <div class="alert">
+                    <h3>⚠️ Non-ETHZ Email Detected</h3>
+                    <p>This student does not have an @ethz.ch email address registered.</p>
+                </div>
+                <div class="details">
+                    <h4>Details:</h4>
+                    <p>{context}</p>
+                </div>
+                {supervisor_note}
+                <div class="footer">
+                    <p>This is an automated notification from the {CLUSTER_NAME} monitoring system.</p>
+                    <p>If you have any questions, please contact: <a href="mailto:{ADMIN_EMAIL}">{ADMIN_EMAIL}</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
     else:
         return f"""
         <html>
@@ -352,7 +392,7 @@ def create_email_body(recipient: str, email_type: str, context: str) -> str:
         </html>
         """
 
-def store_email_notification(user: str, email_type: str, context: str) -> None:
+def store_email_notification(user: str, email_type: str, context: str, cc_emails=None) -> None:
     """Store email notification in the task logs table."""
     conn = get_db_connection(DB_PATH)
     try:
@@ -375,7 +415,9 @@ def store_email_notification(user: str, email_type: str, context: str) -> None:
         task_name = f"email-{email_type}"
         status = "sent"
         message = f"Email notification sent to {user}"
-        details = context
+        # Add CC info to details
+        cc_line = f"CC: {', '.join(cc_emails)}\n" if cc_emails else ""
+        details = f"{cc_line}{context}"
         
         cursor.execute("""
             INSERT INTO PeriodicTaskLogs 
