@@ -8,6 +8,7 @@ import TaskLogs from './components/tasks/TaskLogs';
 import CalendarView from './components/calendar/CalendarView';
 import ActiveReservations from './components/ActiveReservations';
 import DiscoCluster from './components/disco/DiscoCluster';
+import PhdThesisPage from './components/PhdThesisPage';
 import './App.css';
 
 function App() {
@@ -37,9 +38,6 @@ function App() {
                 <Link to="/sizes" className="nav-link">Size Distribution</Link>
               </li>
               <li className="nav-item">
-                <Link to="/tasks" className="nav-link">Task Logs</Link>
-              </li>
-              <li className="nav-item">
                 <Link to="/calendar" className="nav-link">Calendar</Link>
               </li>
               <li className="nav-item">
@@ -63,6 +61,7 @@ function App() {
             <Route path="/tasks" element={<TaskLogs />} />
             <Route path="/calendar" element={<CalendarView />} />
             <Route path="/disco" element={<DiscoCluster />} />
+            <Route path="/phd" element={<PhdThesisPage />} />
             <Route path="*" element={<div>Page Not Found</div>} />
           </Routes>
         </div>

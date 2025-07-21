@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Rate limiting storage (in-memory for simplicity)
 email_rate_limit = {}
-IS_DEBUGGING = (PORT == 5001)
+IS_DEBUGGING = not (PORT == 5000)
 
 def send_email(user: str, email_type: str = "reservation-not-used", context: str = "") -> bool:
     """

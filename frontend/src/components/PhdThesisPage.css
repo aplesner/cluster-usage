@@ -1,0 +1,16 @@
+.user-tag {
+  display: inline-block;
+  padding: 0.2em 0.7em;
+  border-radius: 1em;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  margin: 0 0.1em 0.1em 0;
+  transition: background 0.2s, color 0.2s;
+}
+.user-tag:hover {
+  background: #b3d4fc;
+  color: #222;
+  text-decoration: underline;
+} 

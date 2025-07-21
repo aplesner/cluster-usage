@@ -1,4 +1,5 @@
 import React from 'react';
+import CalendarEventStringGenerator from './CalendarEventStringGenerator';
 import ActiveReservations from '../ActiveReservations';
 import CurrentUsage from './CurrentUsage';
 
@@ -6,10 +7,10 @@ const CalendarView = () => {
   return (
     <div className="calendar-container">
       <h2 className="page-title">Cluster Calendar</h2>
-      
+      {/* Reservation String Generator */}
+      <CalendarEventStringGenerator />
       {/* Active Reservations Section */}
       <ActiveReservations />
-      
       {/* Calendar Section */}
       <div className="card">
         <div className="card-header">
@@ -27,7 +28,6 @@ const CalendarView = () => {
           </div>
         </div>
       </div>
-
       {/* Current Usage Section */}
       <CurrentUsage />
     </div>
