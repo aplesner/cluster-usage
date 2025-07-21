@@ -56,24 +56,53 @@ const PhdThesisPage = () => {
         setTheses(thesesData.current_theses || []);
         setGpuHoursMap(allGpuHours || {});
 
-        // Create a map of users to their supervisors
+        // Create a map of users to their supervisors (only most current/active thesis per user)
         const userToSupervisors = new Map();
-        // Create a set of all supervisors
-        const supervisors = new Set();
-        
-        // First, identify all supervisors from theses
-        thesesData.all_theses.forEach(thesis => {
-          thesis.supervisors?.forEach(supervisor => {
-            supervisors.add(supervisor);
-          });
-        });
-
-        // Map users to their supervisors
+        // Utility to compare semesters
+        function parseSemester(semester) {
+          if (!semester) return { year: 0, type: 0 };
+          const [type, yearStr] = semester.split(' ');
+          const year = parseInt(yearStr, 10) || 0;
+          // HS (Herbst/Fall) is 2, FS (Frühling/Spring) is 1
+          const typeNum = type === 'HS' ? 2 : type === 'FS' ? 1 : 0;
+          return { year, type: typeNum };
+        }
+        function isSemesterMoreCurrent(a, b) {
+          // Returns true if a is more current than b
+          const sa = parseSemester(a);
+          const sb = parseSemester(b);
+          if (sa.year !== sb.year) return sa.year > sb.year;
+          return sa.type > sb.type;
+        }
+        // Map users to their most current/active thesis
+        const userToMostCurrentThesis = new Map();
         thesesData.all_theses.forEach(thesis => {
           thesis.students?.forEach(student => {
-            if (thesis.supervisors && thesis.supervisors.length > 0) {
-              userToSupervisors.set(student, thesis.supervisors);
+            const prev = userToMostCurrentThesis.get(student);
+            if (!prev) {
+              userToMostCurrentThesis.set(student, thesis);
+            } else if (!prev.is_past && thesis.is_past) {
+              // Keep prev (current over past)
+              // do nothing
+            } else if (!thesis.is_past && prev.is_past) {
+              // Prefer current over past
+              userToMostCurrentThesis.set(student, thesis);
+            } else if (isSemesterMoreCurrent(thesis.semester, prev.semester)) {
+              // Both current or both past: pick more recent
+              userToMostCurrentThesis.set(student, thesis);
             }
+          });
+        });
+        userToMostCurrentThesis.forEach((thesis, student) => {
+          if (thesis.supervisors && thesis.supervisors.length > 0) {
+            userToSupervisors.set(student, thesis.supervisors);
+          }
+        });
+        // Create a set of all supervisors (from most current/active theses only)
+        const supervisors = new Set();
+        userToMostCurrentThesis.forEach((thesis) => {
+          thesis.supervisors?.forEach(supervisor => {
+            supervisors.add(supervisor);
           });
         });
 

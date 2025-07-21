@@ -85,3 +85,4 @@ data/backups/*
 .Trashes
 ehthumbs.db
 Thumbs.db
+data/db/io_usage.db

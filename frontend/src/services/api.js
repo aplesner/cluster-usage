@@ -26,6 +26,8 @@ async function fetchData(endpoint) {
  * @returns {Promise} - Promise with the users data including roles
  */
 export const getAllUsers = () => fetchData('/users');
+// Alias for compatibility
+export const getUsers = getAllUsers;
 
 /**
  * Get overall database statistics
@@ -137,6 +139,7 @@ export const getCurrentUsageAll = () => fetchData('/calendar/current-usage');
 
 const api = {
   getAllUsers,
+  getUsers, // Add alias here for compatibility
   getStats,
   getMachines,
   getUserUsage,
