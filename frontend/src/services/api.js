@@ -22,10 +22,12 @@ async function fetchData(endpoint) {
 }
 
 /**
- * Get all users with their basic stats
- * @returns {Promise} - Promise with the users data
+ * Get all users with their roles and basic info
+ * @returns {Promise} - Promise with the users data including roles
  */
-export const getUsers = () => fetchData('/users');
+export const getAllUsers = () => fetchData('/users');
+// Alias for compatibility
+export const getUsers = getAllUsers;
 
 /**
  * Get overall database statistics
@@ -123,8 +125,21 @@ export const getEmailCountsByUser = (startTime, endTime) =>
 export const fetchThesisDetails = (username) =>
   fetchData(`/users/${username}/thesis-details`);
 
+/**
+ * Fetch all theses (for /phd page)
+ * @returns {Promise} - Promise with all theses data
+ */
+export const fetchAllTheses = () => fetchData('/theses/all');
+
+/**
+ * Get current resource usage for all users
+ * @returns {Promise} - Promise with current usage data for all users
+ */
+export const getCurrentUsageAll = () => fetchData('/calendar/current-usage');
+
 const api = {
-  getUsers,
+  getAllUsers,
+  getUsers, // Add alias here for compatibility
   getStats,
   getMachines,
   getUserUsage,
@@ -138,6 +153,7 @@ const api = {
   getEmailNotifications,
   getEmailCountsByUser,
   fetchThesisDetails,
+  getCurrentUsageAll,
   async getActiveCalendarEvents() {
     const response = await fetch('/api/calendar/active');
     if (!response.ok) {

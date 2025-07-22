@@ -243,56 +243,6 @@ const CurrentUsage = () => {
                     </div>
                 </div>
             </div>
-            {/* Theses and Supervisors Table */}
-            <div className="card" style={{ marginTop: 32 }}>
-                <div className="card-header">
-                    <h3>Theses and Supervisors (from database)</h3>
-                </div>
-                <div className="card-body">
-                    {thesesLoading ? (
-                        <LoadingSpinner />
-                    ) : thesesError ? (
-                        <ErrorMessage message={thesesError} />
-                    ) : (
-                        <div className="table-container">
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th>Student Username</th>
-                                        <th>Thesis Title</th>
-                                        <th>Semester</th>
-                                        <th>Supervisors</th>
-                                        <th>View Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {thesesSupervisors.length > 0 ? (
-                                        thesesSupervisors.map((entry, idx) => (
-                                            <tr key={idx}>
-                                                <td>{entry.student_username}</td>
-                                                <td>{entry.thesis_title}</td>
-                                                <td>{entry.semester}</td>
-                                                <td>{entry.supervisors && entry.supervisors.length > 0 ? entry.supervisors.join(', ') : '-'}</td>
-                                                <td>
-                                                    <Link to={`/users/${entry.student_username}`} className="btn btn-sm">
-                                                        View Details
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="5" style={{ textAlign: 'center' }}>
-                                                No thesis-supervisor data found
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            </div>
         </div>
     );
 };

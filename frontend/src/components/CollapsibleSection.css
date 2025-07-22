@@ -1,0 +1,20 @@
+.collapsible-section {
+  margin-bottom: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #e0e0e033;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+}
+
+.collapsible-header:hover {
+  background: #e3eafc;
+}
+
+.collapsible-content {
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+} 

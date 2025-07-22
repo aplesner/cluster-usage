@@ -160,7 +160,7 @@ if __name__ == '__main__':
         print("Registered slurm_log_parser task (runs every 10 minutes)")
 
         # Register and start the disco thesis scraper task
-        scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=7*24*60, initial_delay=DELAY*50)
+        scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=7*24*60, initial_delay=DELAY)
         # print("Registered disco_thesis_scraper task (runs every 7 days)")
         
         # Start the task scheduler

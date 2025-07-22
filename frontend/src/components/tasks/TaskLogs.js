@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
@@ -316,7 +317,13 @@ const TaskLogs = () => {
   if (error) return <ErrorMessage message={error} />;
 
   return (
-    <div className="tasks-container">
+    <div className="task-logs-container">
+      {/* Big blue button to view Phd page */}
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0 2rem 0' }}>
+        <Link to="/phd" className="btn btn-primary btn-lg" style={{ fontSize: '1.3em', padding: '1em 2.5em', background: '#1976d2', color: '#fff', borderRadius: '2em', fontWeight: 600, boxShadow: '0 2px 8px #1976d233', border: 'none' }}>
+          View Phd page
+        </Link>
+      </div>
       <h2 className="page-title">Task Logs & Email Notifications</h2>
       
       {/* Email Counts by User Section */}
