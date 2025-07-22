@@ -209,8 +209,10 @@ def parse_and_store_log_data(conn, log_content):
     # Commit transaction
     conn.commit()
 
-def process_log_file(conn, log_path, archive_dir=None):
+def process_log_file(conn, log_path, archive_dir=None, verbose=True):
     """Process a log file and update the database"""
+    if verbose:
+        print(f"Processing log file: {log_path}...")
     try:
         with open(log_path, 'r') as file:
             log_content = file.read()
@@ -226,9 +228,11 @@ def process_log_file(conn, log_path, archive_dir=None):
             # Add datetime to the filename to avoid overwriting
             archive_path = archive_path.replace(".log", f"_{datetime.now().strftime('%Y-%m-%d.log')}")
             shutil.move(log_path, archive_path)
-            print(f"Archived {log_filename} to {archive_dir}")
-        
-        print(f"Successfully processed log file: {log_path}")
+            if verbose:
+                print(f"Archived {log_filename} to {archive_dir}")
+
+        if verbose:
+            print(f"Successfully processed log file: {log_path}")
         return True
     except Exception as e:
         print(f"Error processing log file {log_path}: {e}")

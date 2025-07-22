@@ -4,10 +4,61 @@ from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import time
 import re
+import os
 import logging
 from backend.email_notifications.email_notifications import send_email
 from backend.config import DATA_DIR, DB_PATH, NOTIFY_SUPERVISORS_ON_NON_ETHZ_STUDENT_EMAILS
 from backend.database.schema import get_db_connection
+
+CSV_FILE_PATH = f'{DATA_DIR}/disco_all_theses.csv'
+
+def get_theses_rows(soup, page_name):
+    """
+    Extract thesis rows from the BeautifulSoup object based on the page type.
+    
+    Args:
+        soup: BeautifulSoup object of the page content.
+        page_name: 'current' or 'past' to determine how to extract rows.
+        
+    Returns:
+        List of thesis rows.
+    """
+    if page_name == "current":
+        header = soup.find('h2', string='Current Theses & Labs')
+        if not header:
+            logging.warning(f"Could not find header on {page_name} page")
+            return []
+        
+        table = header.find_parent('table')
+        if not table:
+            logging.warning(f"Could not find table on {page_name} page")
+            return []
+        
+        # Find the index of the header row
+        rows = table.find_all('tr')
+        header_index = None
+        for i, row in enumerate(rows):
+            if row.find('h2', string='Current Theses & Labs'):
+                header_index = i
+                break
+        
+        if header_index is None:
+            logging.warning(f"Could not determine header index on {page_name} page")
+            return []
+        
+        # The theses start after the header row and the column format row
+        return rows[header_index + 2:]
+    
+    else:  # past theses
+        # Find the main table - <table> tag 
+        table = soup.find('table')
+        
+        # Get all rows after the header
+        rows = table.find_all('tr')
+        
+        # Skip the first row (header)
+        return rows[1:]
+
 
 def extract_theses_data() -> pd.DataFrame:
     """
@@ -48,43 +99,11 @@ def extract_theses_data() -> pd.DataFrame:
             soup = BeautifulSoup(page_source, 'html.parser')
             logging.info(f"Page source loaded for {page_name} page")
 
-            # For current theses, find the specific section
-            if page_name == "current":
-                header = soup.find('h2', string='Current Theses & Labs')
-                if not header:
-                    logging.warning(f"Could not find header on {page_name} page")
-                    continue
-                    
-                table = header.find_parent('table')
-                if not table:
-                    logging.warning(f"Could not find table on {page_name} page")
-                    continue
-                
-                # Find the index of the header row
-                rows = table.find_all('tr')
-                header_index = None
-                for i, row in enumerate(rows):
-                    if row.find('h2', string='Current Theses & Labs'):
-                        header_index = i
-                        break
-                
-                if header_index is None:
-                    logging.warning(f"Could not determine header index on {page_name} page")
-                    continue
-                    
-                # The theses start after the header row and the column format row
-                thesis_rows = rows[header_index + 2:]
-                
-            else:  # past theses
-                # Find the main table - <table> tag 
-                table = soup.find('table')
-                
-                # Get all rows after the header
-                rows = table.find_all('tr')
-                
-                # Skip the first row (header)
-                thesis_rows = rows[1:]
-            
+            thesis_rows = get_theses_rows(soup, page_name)
+            if not thesis_rows:
+                logging.warning(f"No thesis rows found on {page_name} page")
+                continue
+
             # Process thesis rows
             for row in thesis_rows:
                 # Stop if we reach another section header on current page
@@ -173,25 +192,48 @@ def extract_theses_data() -> pd.DataFrame:
                     continue
             
             logging.info(f"Extracted {len(all_theses_data)} theses until now")
-        
-        # Create DataFrame
-        df = pd.DataFrame(all_theses_data)
-        
-        # Save to CSV
-        csv_path = f'{DATA_DIR}/disco_all_theses.csv'
-        df.to_csv(csv_path, index=False)
-        logging.info(f"Data saved to {csv_path}")
-        
-        return df
+
+        # Return DataFrame
+        return pd.DataFrame(all_theses_data)
         
     finally:
         # Clean up browser
         driver.quit()
 
+
+def scrape_disco_theses() -> None:
+    
+    df = extract_theses_data()
+
+    # Save to CSV
+    csv_path = CSV_FILE_PATH
+    df.to_csv(csv_path, index=False)
+    logging.info(f"Data saved to {csv_path}")
+
+ 
+def read_disco_theses_from_csv() -> pd.DataFrame:
+    """
+    Read the DISCO theses data from the CSV file.
+
+    Returns:
+        DataFrame: DataFrame containing the theses data.
+    """
+    csv_path = CSV_FILE_PATH
+    logging.info(f"Reading DISCO theses from CSV: {csv_path}")
+    if not os.path.exists(csv_path):
+        logging.error(f"CSV file not found: {csv_path}")
+        return pd.DataFrame()  # Return empty DataFrame if file does not exist
+    
+    df = pd.read_csv(csv_path)
+    logging.info(f"Read {len(df)} theses from CSV")
+    
+    return df
+
+
 def run_disco_scraper() -> str:
     logging.info('Running DISCO thesis scraper task...')
     try:
-        df = extract_theses_data()
+        df = read_disco_theses_from_csv()
         
         if df is not None and not df.empty:
             # Store thesis data in database

@@ -5,6 +5,7 @@ import argparse
 import sqlite3
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
+import tqdm
 
 # Add the parent directory to the Python path to make imports work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -23,7 +24,7 @@ from backend.tasks.check_reservation import check_reservation_activity
 from backend.tasks.check_usage import check_usage_activity
 from backend.tasks.parse_slurm_job_task import parse_and_store_slurm_log
 # --- BEGIN: Import disco scraper task function ---
-from backend.tasks.disco_scraper_task import run_disco_scraper
+from backend.tasks.disco_scraper_task import scrape_disco_theses
 # --- END: Import disco scraper task function ---
 
 # Create Flask app
@@ -82,10 +83,9 @@ def process_logs(incoming_dir=INCOMING_LOGS_DIR, archive_dir: Union[str, None]=A
     
     conn = schema.get_db_connection(DB_PATH)
     processed_count = 0
-    
-    for log_file in log_files:
-        print(f"Processing {log_file}...")
-        if log_parser.process_log_file(conn, log_file, archive_dir):
+
+    for log_file in tqdm.tqdm(log_files):
+        if log_parser.process_log_file(conn, log_file, archive_dir, verbose=False):
             processed_count += 1
     
     conn.close()
@@ -121,6 +121,8 @@ if __name__ == '__main__':
     
     if args.action == 'init':
         init_database()
+    elif args.action == 'scrape_disco_website':
+        scrape_disco_theses()
     elif args.action == 'process_logs':
         if not os.path.exists(DB_PATH):
             print(f"Database not found at {DB_PATH}. Initializing...")
@@ -160,7 +162,7 @@ if __name__ == '__main__':
         print("Registered slurm_log_parser task (runs every 10 minutes)")
 
         # Register and start the disco thesis scraper task
-        scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=7*24*60, initial_delay=DELAY)
+        # scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=7*24*60, initial_delay=DELAY)
         # print("Registered disco_thesis_scraper task (runs every 7 days)")
         
         # Start the task scheduler
