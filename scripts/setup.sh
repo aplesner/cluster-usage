@@ -39,6 +39,9 @@ pip3 install -r requirements.txt
 cd "$ROOT_DIR"
 python3 "$ROOT_DIR/backend/app.py" init
 
+# Scrape DISCO theses
+python3 "$ROOT_DIR/backend/app.py" scrape_disco_website
+
 deactivate
 
 # Set up frontend

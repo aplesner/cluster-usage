@@ -210,6 +210,10 @@ def scrape_disco_theses() -> None:
     df.to_csv(csv_path, index=False)
     logging.info(f"Data saved to {csv_path}")
 
+    store_thesis_data_in_database(df)
+
+    logging.info("DISCO thesis scraping completed and data stored in database.")
+
  
 def read_disco_theses_from_csv() -> pd.DataFrame:
     """
@@ -236,11 +240,6 @@ def run_disco_scraper() -> str:
         df = read_disco_theses_from_csv()
         
         if df is not None and not df.empty:
-            # Store thesis data in database
-            print(df.head(5))
-            store_thesis_data_in_database(df)
-            
-            logging.info(f'DISCO thesis scraper completed. Extracted {len(df)} theses.')
             
             # Filter for current theses only for email notifications
             current_theses = df[df['is_past'] == False]
