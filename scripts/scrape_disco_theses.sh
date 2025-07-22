@@ -1,10 +1,8 @@
-
 #!/bin/bash
 # Script to scrape DISCO theses from the website
 
-# Root directory
-ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
-echo "Root directory: $ROOT_DIR"
+ROOT_DIR="/var/www/cluster-usage-dashboard"
+cd $ROOT_DIR
 
 # Create virtual environment if it doesn't exist
 if [ ! -d "$ROOT_DIR/backend/venv" ]; then

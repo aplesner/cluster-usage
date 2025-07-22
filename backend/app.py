@@ -107,7 +107,7 @@ def process_specific_log(log_path, archive_dir=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='IO Usage Dashboard Backend')
-    parser.add_argument('action', choices=['run', 'init', 'process_logs', 'process_file'], 
+    parser.add_argument('action', choices=['run', 'init', 'scrape_disco_website', 'process_logs', 'process_file'], 
                        help='Action to perform')
     parser.add_argument('--file', help='Path to log file for process_file action')
     parser.add_argument('--archive', action='store_true', help='Archive processed files')
