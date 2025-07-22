@@ -10,7 +10,7 @@ source scripts/variables.sh
 # ssh into the server, cd to ~/bin, and run `./slurm-script.sh --last-hours 2`
 ssh "$USER@$SERVER" << SCRIPT
     cd ~/bin
-    ./slurm-script.sh --last-hours 2
+    ./slurm-script.sh --last-hours 4
 SCRIPT
 
 kill $SSH_AGENT_PID
