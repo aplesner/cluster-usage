@@ -19,4 +19,3 @@ python "$ROOT_DIR/backend/app.py" scrape_disco_website
 
 deactivate
 echo "Scraping completed."
-
