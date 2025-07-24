@@ -19,7 +19,7 @@ def user_has_active_reservation(username, gpu_hours):
     """
     log_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_today.log')
     if not os.path.exists(log_file):
-        return False
+        return False, GPU_HOURS_THRESHOLD
     total_reserved_gpus = 0
     found_reservation = False
     with open(log_file, 'r') as f:
@@ -42,9 +42,9 @@ def user_has_active_reservation(username, gpu_hours):
         utilization = gpu_hours / total_reserved_gpus
 
         if utilization > 1.1:
-            return False
-        return True
-    return False
+            return False, found_reservation
+        return True, found_reservation
+    return False, found_reservation
 
 def check_usage_activity():
     """
@@ -82,9 +82,9 @@ def check_usage_activity():
             gpu_alert = False
             io_alert = False
             if gpu_hours > GPU_HOURS_THRESHOLD:
-                has_reservation = user_has_active_reservation(username, gpu_hours)
+                has_reservation, THRESH = user_has_active_reservation(username, gpu_hours)
                 if not has_reservation:
-                    context = f"Total GPU hours: {gpu_hours:.2f} (threshold: {GPU_HOURS_THRESHOLD})"
+                    context = f"Total GPU hours: {gpu_hours:.2f} (computed threshold according to policy, including active reservations: {THRESH})"
                     send_email(username, "gpu-usage-high", context)
                     gpu_alert = True
             if io_ops > IO_OPS_THRESHOLD:

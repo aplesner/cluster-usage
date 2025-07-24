@@ -816,3 +816,65 @@ def get_historic_usage_per_user(db_path: str, username: Union[str, None] = None)
 #             'supervisors': row['supervisors'].split(',') if row['supervisors'] else []
 #         })
 #     return result
+
+def get_running_jobs_with_timestamp(db_path: str):
+    """Get all running jobs from the latest log entry along with the log timestamp."""
+    conn = get_db_connection(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Get the latest log entry timestamp
+        cursor.execute("""
+            SELECT timestamp FROM LogEntries 
+            ORDER BY unix_timestamp DESC 
+            LIMIT 1
+        """)
+        result = cursor.fetchone()
+        log_timestamp = result[0] if result else None
+        
+        # Get running jobs from the latest log entry
+        cursor.execute("""
+            SELECT 
+                j.job_id,
+                u.username,
+                m.machine_name,
+                j.cpus,
+                j.memory,
+                j.gpus,
+                j.runtime,
+                j.state,
+                j.command,
+                j.end_time
+            FROM Jobs j
+            JOIN Users u ON j.user_id = u.user_id
+            JOIN Machines m ON j.machine_id = m.machine_id
+            JOIN LogEntries l ON j.log_id = l.log_id
+            WHERE j.state = 'RUNNING'
+            AND l.unix_timestamp = (
+                SELECT MAX(unix_timestamp) FROM LogEntries
+            )
+        """)
+        
+        jobs = []
+        for row in cursor.fetchall():
+            job = {
+                'job_id': row[0],
+                'username': row[1],
+                'machine_name': row[2],
+                'cpus': row[3],
+                'memory': row[4],
+                'gpus': row[5],
+                'runtime': row[6],
+                'state': row[7],
+                'command': row[8],
+                'end_time': row[9]
+            }
+            jobs.append(job)
+        
+        return jobs, log_timestamp
+        
+    except Exception as e:
+        print(f"Error getting running jobs from database: {e}")
+        return [], None
+    finally:
+        conn.close()

@@ -32,9 +32,82 @@ function CalendarEventStringGenerator() {
     }
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(eventString);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1200);
+        console.log('Copy button clicked, text to copy:', eventString);
+        console.log('Clipboard API available:', !!navigator.clipboard);
+        console.log('Clipboard writeText available:', !!(navigator.clipboard && navigator.clipboard.writeText));
+        
+        // Try using the modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            console.log('Using modern clipboard API');
+            navigator.clipboard.writeText(eventString)
+                .then(() => {
+                    console.log('Modern clipboard API succeeded');
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1200);
+                })
+                .catch((error) => {
+                    console.log('Modern clipboard API failed:', error);
+                    // Fallback to the old method if clipboard API fails
+                    fallbackCopyTextToClipboard(eventString);
+                });
+        } else {
+            console.log('Using fallback copy method');
+            // Fallback for browsers that don't support clipboard API
+            fallbackCopyTextToClipboard(eventString);
+        }
+    };
+
+    const fallbackCopyTextToClipboard = (text) => {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        
+        // Make it invisible but keep it in the DOM
+        textArea.style.position = 'absolute';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '-9999px';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+        
+        document.body.appendChild(textArea);
+        
+        // Use setTimeout to ensure the element is properly added to DOM
+        setTimeout(() => {
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1200);
+                    console.log('Text copied successfully via fallback method');
+                } else {
+                    console.warn('Fallback copy command failed');
+                    // Try one more time with a slight delay
+                    setTimeout(() => {
+                        textArea.focus();
+                        textArea.select();
+                        const retrySuccessful = document.execCommand('copy');
+                        if (retrySuccessful) {
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 1200);
+                            console.log('Text copied successfully on retry');
+                        } else {
+                            console.error('Copy failed even on retry');
+                        }
+                    }, 100);
+                }
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }, 10);
     };
 
     return (

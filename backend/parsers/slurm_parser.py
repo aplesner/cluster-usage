@@ -183,17 +183,35 @@ def extract_log_timestamp(log_file):
         return match.group(1)
     return None
 
-# Modify get_current_usage_summary to use the new hosts structure
+# Modify get_current_usage_summary to use the database and reuse existing code
 def get_current_usage_summary(db_path: str):
     """Get a summary of current resource usage suitable for display in a table, and the log timestamp."""
-    log_file = os.path.join(CALENDAR_LOGS_DIR, 'slurm', 'slurm.log')
-    log_timestamp = extract_log_timestamp(log_file)
-    with open(log_file, 'r') as f:
-        log_content = f.read()
-    jobs = parse_slurm_log(log_content)
-
-    running_jobs = filter_jobs(jobs, states=[JobState.RUNNING])
-    usage_by_user, gpus_by_user_host = calculate_user_resource_usage(running_jobs, db_path)
+    from backend.database.queries import get_running_jobs_with_timestamp
+    
+    # Get running jobs from database
+    db_jobs, log_timestamp = get_running_jobs_with_timestamp(db_path)
+    
+    # Convert database jobs to SlurmJob objects for reuse of existing code
+    jobs = []
+    for db_job in db_jobs:
+        job = SlurmJob(
+            job_id=db_job['job_id'],
+            user=db_job['username'],
+            partition='gpu',  # Default partition since not stored in DB
+            cpus=db_job['cpus'],
+            memory_mb=db_job['memory'],
+            gpus=db_job['gpus'],
+            nodes=1,  # Default to 1 since not stored in DB
+            node_list=db_job['machine_name'],
+            elapsed_time=db_job['runtime'],
+            state=JobState(db_job['state']),
+            command=db_job['command'],
+            end_time=db_job['end_time']
+        )
+        jobs.append(job)
+    
+    # Reuse existing code to calculate usage
+    usage_by_user, gpus_by_user_host = calculate_user_resource_usage(jobs, db_path)
 
     summary = []
     for user, usage in usage_by_user.items():
@@ -211,8 +229,9 @@ def get_current_usage_summary(db_path: str):
         })
     return sorted(summary, key=lambda x: x['total_gpus'], reverse=True), log_timestamp
 
-def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
+def store_slurm_jobs(jobs: List[SlurmJob], db_path: str, collection_timestamp: Optional[str] = None) -> bool:
     """Store Slurm jobs in the database"""
+    print(f"Storing {len(jobs)} Slurm jobs in the database")
     conn = None
     try:
         conn = sqlite3.connect(db_path)
@@ -221,19 +240,37 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str) -> bool:
         # Start a transaction
         conn.execute("BEGIN TRANSACTION")
         
-        # Get or create the latest log entry
-        current_time = datetime.now()
-        unix_timestamp = int(current_time.timestamp())
-        timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
+        # Use provided collection timestamp or current time
+        if collection_timestamp:
+            # Parse the collection timestamp
+            try:
+                collection_time = datetime.strptime(collection_timestamp, '%Y-%m-%d %H:%M:%S')
+                unix_timestamp = int(collection_time.timestamp())
+                timestamp = collection_timestamp
+                print(f"Collection timestamp: {timestamp}")
+            except ValueError as e:
+                print(f"Error parsing collection timestamp '{collection_timestamp}': {e}")
+                # Fallback to January 1st, 2000
+                fallback_time = datetime(2000, 1, 1, 0, 0, 0)
+                unix_timestamp = int(fallback_time.timestamp())
+                timestamp = fallback_time.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            # Use current time as before
+            current_time = datetime.now()
+            unix_timestamp = int(current_time.timestamp())
+            timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
         
+        
+        # Clear all existing jobs and log entries before inserting new ones
+        cursor.execute("DELETE FROM Jobs")
+        cursor.execute("DELETE FROM LogEntries")
+        
+        # Re-insert the log entry since we just deleted it
         cursor.execute(
             "INSERT INTO LogEntries (timestamp, unix_timestamp) VALUES (?, ?)",
             (timestamp, unix_timestamp)
         )
         log_id = cursor.lastrowid
-        
-        # Clear all existing jobs before inserting new ones
-        cursor.execute("DELETE FROM Jobs")
         
         # Store each job
         for job in jobs:

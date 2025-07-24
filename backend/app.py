@@ -173,13 +173,13 @@ if __name__ == '__main__':
         # Start the task scheduler
         scheduler.start()
         print("lets start this party")
-        
+        if PORT == 5000:
         # Send startup notification email
-        try:
-            send_email("jmathys@ethz.ch", "startup-notification", "Cluster watchdog system has started successfully")
-            print("Startup notification email sent to jmathys@ethz.ch")
-        except Exception as e:
-            print(f"Failed to send startup notification email: {e}")
+            try:
+                send_email("jmathys@ethz.ch", "startup-notification", "Cluster watchdog system has started successfully")
+                print("Startup notification email sent to jmathys@ethz.ch")
+            except Exception as e:
+                print(f"Failed to send startup notification email: {e}")
         
         try:
             app.run(host=HOST, port=PORT, debug=DEBUG)
