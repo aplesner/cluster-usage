@@ -27,6 +27,9 @@ from backend.tasks.parse_slurm_job_task import parse_and_store_slurm_log
 from backend.tasks.disco_scraper_task import scrape_disco_theses
 # --- END: Import disco scraper task function ---
 
+# Import email notification system
+from backend.email_notifications import send_email
+
 # Create Flask app
 app = Flask(__name__, static_folder=None)
 app.config['DB_PATH'] = DB_PATH
@@ -165,9 +168,19 @@ if __name__ == '__main__':
         # scheduler.add_task("disco_thesis_scraper", run_disco_scraper, interval_minutes=7*24*60, initial_delay=DELAY)
         # print("Registered disco_thesis_scraper task (runs every 7 days)")
         
+
+
         # Start the task scheduler
         scheduler.start()
         print("lets start this party")
+        
+        # Send startup notification email
+        try:
+            send_email("jmathys@ethz.ch", "startup-notification", "Cluster watchdog system has started successfully")
+            print("Startup notification email sent to jmathys@ethz.ch")
+        except Exception as e:
+            print(f"Failed to send startup notification email: {e}")
+        
         try:
             app.run(host=HOST, port=PORT, debug=DEBUG)
         finally:

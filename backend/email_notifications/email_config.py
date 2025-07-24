@@ -4,14 +4,17 @@ Update these values with your actual Google account credentials.
 """
 
 # Google SMTP Configuration
+
 SMTP_SERVER = "smtp.gmail.com"
+#SMTP_SERVER = "smtp.ethz.ch"
 SMTP_PORT = 587
 
 # Email account credentials
-# Replace these with your actual Google account details
-EMAIL_SENDER = "cluster.disco@gmail.com"  # Your Gmail address
-EMAIL_PASSWORD = "uylq ashw tany qzih"   # Your Gmail app password
-
+# Replace these with our actual Google account details
+#EMAIL_SENDER = "tik-cluster@ethz.ch"
+EMAIL_SENDER = "cluster.disco@gmail.com"
+#EMAIL_PASSWORD = "1F#YvYE2L4:g" #"uylq ashw tany qzih"   # Your Gmail app password
+EMAIL_PASSWORD = "uylq ashw tany qzih"
 # Email domain for recipients
 # Replace with your organization's email domain
 EMAIL_DOMAIN = "ethz.ch"  # e.g., "company.com", "university.edu"

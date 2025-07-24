@@ -503,7 +503,7 @@ def get_user_thesis_details_api(username: str):
     # logging.info(f"Fetching thesis details for user: {username} test")
     # print(f"Fetching thesis details for user: {username} test")
     try:
-        from backend.tasks.disco_scraper_task import get_user_thesis_details
+        from backend.database.thesis_queries import get_user_thesis_details
         
         thesis_details = get_user_thesis_details(username)
         

@@ -13,7 +13,7 @@ from .email_config import (
     EMAIL_DOMAIN, ADMIN_EMAIL, CLUSTER_NAME, MAX_RETRIES, 
     RETRY_DELAY, MAX_EMAILS_PER_HOUR, ENABLE_EMAILS
 )
-# from ..tasks.disco_scraper_task import get_user_thesis_details # TODO
+from ..database.thesis_queries import get_user_thesis_details
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +41,22 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
         try:
             # Only look up supervisors if user is a username
             lookup_user = user.split('@')[0] if '@' in user else user
-            thesis_info = None # get_user_thesis_details(lookup_user) # TODO
+            thesis_info = get_user_thesis_details(lookup_user)
             if thesis_info and len(thesis_info) > 0:
-                supervisors = set()
-                for thesis in thesis_info:
-                    supervisors.update(thesis['supervisors'])
-                # Remove the user from CC if present
-                supervisors.discard(lookup_user)
-                cc_emails = [f"{sup}@{EMAIL_DOMAIN}" for sup in supervisors if sup]
+                # Get supervisors from the most recent thesis only
+                most_recent_thesis = thesis_info[0]
+                
+                # Only get supervisors if the user is a student in this thesis
+                if most_recent_thesis['role'] == 'student':
+                    supervisors = set(most_recent_thesis['supervisors'])
+                    # Remove the user from CC if present
+                    supervisors.discard(lookup_user)
+                    cc_emails = [f"{sup}@{EMAIL_DOMAIN}" for sup in supervisors if sup]
+                    
+                    # Log which thesis is being used for supervisor lookup
+                    logger.info(f"Using most recent thesis for {lookup_user}: '{most_recent_thesis['thesis_title']}' (semester: {most_recent_thesis['semester']}, role: {most_recent_thesis['role']})")
+                else:
+                    logger.info(f"User {lookup_user} is a supervisor in their most recent thesis, no supervisors to CC")
         except Exception as e:
             logger.error(f"Error fetching supervisors for CC: {e}")
             cc_emails = []
@@ -110,7 +118,8 @@ def send_smtp_email(recipient: str, email_type: str, context: str, cc_emails=Non
     if cc_emails is None:
         cc_emails = []
 
-    if IS_DEBUGGING:
+    # Allow startup notifications to bypass debugging restriction
+    if IS_DEBUGGING and email_type != "startup-notification":
         logger.info(f"DEBUGGING - Email not sent to {recipient} bc of DEBUGGING (CC: {cc_emails})")
         return True
     
@@ -165,6 +174,7 @@ def get_email_subject(email_type: str) -> str:
         "reservation-reminder": "Cluster Reservation Reminder",
         "gpu-usage-high": "Cluster Usage Alert - High GPU Usage",
         "io-usage-high": "Cluster Usage Alert - High IO Usage",
+        "startup-notification": f"{CLUSTER_NAME} - Watchdog is Live",
         "default": "Cluster Usage Notification"
     }
     return subjects.get(email_type, subjects["default"])
@@ -353,6 +363,46 @@ def create_email_body(recipient: str, email_type: str, context: str) -> str:
                 </div>
                 {supervisor_note}
                 <div class="footer">
+                    <p>This is an automated notification from the {CLUSTER_NAME} monitoring system.</p>
+                    <p>If you have any questions, please contact: <a href="mailto:{ADMIN_EMAIL}">{ADMIN_EMAIL}</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+    elif email_type == "startup-notification":
+        return f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .alert {{ background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>{CLUSTER_NAME} - Watchdog Status</h2>
+                    <p>Hello {recipient},</p>
+                </div>
+                
+                <div class="alert">
+                    <h3>🟢 Cluster Watchdog is Live</h3>
+                    <p>The {CLUSTER_NAME} monitoring system has successfully started and is now actively monitoring cluster usage and reservations.</p>
+                </div>
+                
+                <div class="footer">
+                    <p><strong>Monitoring Features Active:</strong></p>
+                    <ul>
+                        <li>Reservation usage tracking</li>
+                        <li>GPU and IO usage monitoring</li>
+                        <li>Automated email notifications</li>
+                        <li>Periodic health checks</li>
+                    </ul>
+                    
                     <p>This is an automated notification from the {CLUSTER_NAME} monitoring system.</p>
                     <p>If you have any questions, please contact: <a href="mailto:{ADMIN_EMAIL}">{ADMIN_EMAIL}</a></p>
                 </div>

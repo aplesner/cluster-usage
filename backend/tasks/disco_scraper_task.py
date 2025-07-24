@@ -9,6 +9,7 @@ import logging
 from backend.email_notifications.email_notifications import send_email
 from backend.config import DATA_DIR, DB_PATH, NOTIFY_SUPERVISORS_ON_NON_ETHZ_STUDENT_EMAILS
 from backend.database.schema import get_db_connection
+from backend.database.thesis_queries import get_user_thesis_details
 
 CSV_FILE_PATH = f'{DATA_DIR}/disco_all_theses.csv'
 
@@ -392,88 +393,4 @@ def store_thesis_data_in_database(df: pd.DataFrame) -> None:
     finally:
         conn.close()
 
-def get_user_thesis_details(username: str) -> list[dict]:
-    """
-    Get detailed thesis information for a specific user.
-    
-    Args:
-        username: The username to fetch thesis information for
-        
-    Returns:
-        List[Dict]: List of thesis details including supervisors, thesis info, etc.
-    """
-    conn = get_db_connection(DB_PATH)
-    cursor = conn.cursor()
-    
-    try:
-        # Get thesis information where user is a student
-        cursor.execute('''
-            SELECT DISTINCT 
-                us.thesis_title,
-                us.semester,
-                us.student_email,
-                t.icon_url,
-                t.is_past,
-                GROUP_CONCAT(DISTINCT us.supervisor_username) as supervisors
-            FROM UserSupervisors us
-            LEFT JOIN Theses t ON us.thesis_title = t.title AND us.semester = t.semester
-            WHERE us.student_username = ?
-            GROUP BY us.thesis_title, us.semester, us.student_email, t.icon_url, t.is_past
-            ORDER BY t.is_past ASC, us.semester DESC
-        ''', (username,))
-        
-        student_theses = cursor.fetchall()
-        
-        # Get thesis information where user is a supervisor
-        cursor.execute('''
-            SELECT DISTINCT 
-                us.thesis_title,
-                us.semester,
-                t.icon_url,
-                t.is_past,
-                GROUP_CONCAT(DISTINCT us.student_username) as students,
-                GROUP_CONCAT(DISTINCT us.student_email) as student_emails
-            FROM UserSupervisors us
-            LEFT JOIN Theses t ON us.thesis_title = t.title AND us.semester = t.semester
-            WHERE us.supervisor_username = ?
-            GROUP BY us.thesis_title, us.semester, t.icon_url, t.is_past
-            ORDER BY t.is_past ASC, us.semester DESC
-        ''', (username,))
-        
-        supervised_theses = cursor.fetchall()
-        
-        result = []
-        
-        # Add theses where user is a student
-        for row in student_theses:
-            result.append({
-                'thesis_title': row[0],
-                'semester': row[1],
-                'role': 'student',
-                'student_email': row[2],
-                'icon_url': row[3] or '',
-                'is_past': bool(row[4]),
-                'supervisors': row[5].split(',') if row[5] else [],
-                'students': []
-            })
-        
-        # Add theses where user is a supervisor
-        for row in supervised_theses:
-            result.append({
-                'thesis_title': row[0],
-                'semester': row[1],
-                'role': 'supervisor',
-                'icon_url': row[2] or '',
-                'is_past': bool(row[3]),
-                'supervisors': [username],
-                'students': row[4].split(',') if row[4] else [],
-                'student_emails': row[5].split(',') if row[5] else []
-            })
-        
-        return result
-        
-    except Exception as e:
-        logging.error(f"Error fetching thesis details for user {username}: {e}")
-        return []
-    finally:
-        conn.close()
+
