@@ -185,11 +185,11 @@ def extract_log_timestamp(log_file):
 
 # Modify get_current_usage_summary to use the database and reuse existing code
 def get_current_usage_summary(db_path: str):
-    """Get a summary of current resource usage suitable for display in a table, and the log timestamp."""
+    """Get a summary of current resource usage suitable for display in a table, and the collection timestamp."""
     from backend.database.queries import get_running_jobs_with_timestamp
     
     # Get running jobs from database
-    db_jobs, log_timestamp = get_running_jobs_with_timestamp(db_path)
+    db_jobs, collection_timestamp = get_running_jobs_with_timestamp(db_path)
     
     # Convert database jobs to SlurmJob objects for reuse of existing code
     jobs = []
@@ -227,7 +227,7 @@ def get_current_usage_summary(db_path: str):
             'total_gpus': usage.total_gpus,
             'hosts': hosts_list
         })
-    return sorted(summary, key=lambda x: x['total_gpus'], reverse=True), log_timestamp
+    return sorted(summary, key=lambda x: x['total_gpus'], reverse=True), collection_timestamp
 
 def store_slurm_jobs(jobs: List[SlurmJob], db_path: str, collection_timestamp: Optional[str] = None) -> bool:
     """Store Slurm jobs in the database"""
@@ -244,33 +244,18 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str, collection_timestamp: O
         if collection_timestamp:
             # Parse the collection timestamp
             try:
-                collection_time = datetime.strptime(collection_timestamp, '%Y-%m-%d %H:%M:%S')
-                unix_timestamp = int(collection_time.timestamp())
-                timestamp = collection_timestamp
-                print(f"Collection timestamp: {timestamp}")
+                created_at = datetime.strptime(collection_timestamp, '%Y-%m-%d %H:%M:%S')
+                print(f"Collection timestamp: {collection_timestamp}")
             except ValueError as e:
                 print(f"Error parsing collection timestamp '{collection_timestamp}': {e}")
                 # Fallback to January 1st, 2000
-                fallback_time = datetime(2000, 1, 1, 0, 0, 0)
-                unix_timestamp = int(fallback_time.timestamp())
-                timestamp = fallback_time.strftime('%Y-%m-%d %H:%M:%S')
+                created_at = datetime(2000, 1, 1, 0, 0, 0)
         else:
             # Use current time as before
-            current_time = datetime.now()
-            unix_timestamp = int(current_time.timestamp())
-            timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
+            created_at = datetime.now()
         
-        
-        # Clear all existing jobs and log entries before inserting new ones
+        # Clear all existing jobs before inserting new ones
         cursor.execute("DELETE FROM Jobs")
-        cursor.execute("DELETE FROM LogEntries")
-        
-        # Re-insert the log entry since we just deleted it
-        cursor.execute(
-            "INSERT INTO LogEntries (timestamp, unix_timestamp) VALUES (?, ?)",
-            (timestamp, unix_timestamp)
-        )
-        log_id = cursor.lastrowid
         
         # Store each job
         for job in jobs:
@@ -304,13 +289,13 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str, collection_timestamp: O
             # Insert job (use REPLACE to handle duplicate job IDs)
             cursor.execute("""
                 INSERT OR REPLACE INTO Jobs (
-                    job_id, log_id, user_id, machine_id,
-                    cpus, memory, gpus, runtime, state, command, end_time
+                    job_id, user_id, machine_id,
+                    cpus, memory, gpus, runtime, state, command, end_time, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                job.job_id, log_id, user_id, machine_id,
+                job.job_id, user_id, machine_id,
                 job.cpus, job.memory_mb, job.gpus,
-                job.elapsed_time, job.state.value, job.command, job.end_time
+                job.elapsed_time, job.state.value, job.command, job.end_time, created_at
             ))
         
         # Commit transaction

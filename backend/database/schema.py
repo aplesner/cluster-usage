@@ -80,10 +80,10 @@ def initialize_database(db_path: str):
     )
     ''')
     
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Jobs (
+    # Define Jobs table structure
+    jobs_table_structure = '''
+    (
         job_id INTEGER PRIMARY KEY,
-        log_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         machine_id INTEGER NOT NULL,
         cpus INTEGER NOT NULL,
@@ -93,11 +93,13 @@ def initialize_database(db_path: str):
         state TEXT NOT NULL,
         command TEXT NOT NULL,
         end_time TEXT NOT NULL,
-        FOREIGN KEY (log_id) REFERENCES LogEntries (log_id),
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES Users (user_id),
         FOREIGN KEY (machine_id) REFERENCES Machines (machine_id)
     )
-    ''')
+    '''
+    
+    cursor.execute("CREATE TABLE IF NOT EXISTS Jobs" + jobs_table_structure)
     
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS PeriodicTaskLogs (
@@ -131,6 +133,24 @@ def initialize_database(db_path: str):
             print("Added end_time column to Jobs table.")
     except Exception as e:
         print(f"Error checking/adding end_time column: {e}")
+    
+    # Check and fix Jobs table schema
+    try:
+        cursor.execute("PRAGMA table_info(Jobs)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'log_id' in columns:
+            # Old schema detected - drop and recreate table
+            print("Detected old Jobs table schema with log_id. Recreating table...")
+            cursor.execute("DROP TABLE Jobs")
+            cursor.execute("CREATE TABLE Jobs" + jobs_table_structure)
+            print("✅ Recreated Jobs table with new schema")
+        elif 'created_at' not in columns:
+            # Missing created_at column - add it
+            cursor.execute("ALTER TABLE Jobs ADD COLUMN created_at DATETIME")
+            print("Added created_at column to Jobs table.")
+    except Exception as e:
+        print(f"Error checking/fixing Jobs table schema: {e}")
     
     conn.commit()
     conn.close()

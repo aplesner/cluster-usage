@@ -257,20 +257,7 @@ def get_user_current_usage(username, db_path):
     try:
         cursor = conn.cursor()
         
-        # Get the latest log entry
-        cursor.execute("""
-            SELECT log_id, unix_timestamp 
-            FROM LogEntries 
-            ORDER BY unix_timestamp DESC 
-            LIMIT 1
-        """)
-        latest_log = cursor.fetchone()
-        if not latest_log:
-            return None
-            
-        log_id = latest_log[0]
-        
-        # Get user's current usage from the latest log using the Jobs table
+        # Get user's current usage from the latest collection using the Jobs table
         cursor.execute("""
             SELECT 
                 m.machine_name as host,
@@ -280,9 +267,12 @@ def get_user_current_usage(username, db_path):
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
-            WHERE j.log_id = ? AND u.username = ? AND j.state = 'RUNNING'
+            WHERE u.username = ? AND j.state = 'RUNNING'
+            AND j.created_at = (
+                SELECT MAX(created_at) FROM Jobs
+            )
             GROUP BY m.machine_name
-        """, (log_id, username))
+        """, (username,))
         
         hosts = []
         total_cpus = 0
@@ -316,7 +306,7 @@ def get_user_running_jobs(username, db_path):
     try:
         cursor = conn.cursor()
         
-        # Get running jobs from the latest log
+        # Get running jobs from the latest collection
         cursor.execute("""
             SELECT 
                 j.job_id,
@@ -331,12 +321,11 @@ def get_user_running_jobs(username, db_path):
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
-            JOIN LogEntries l ON j.log_id = l.log_id
             WHERE u.username = ? 
             AND j.state = 'RUNNING'
-            AND l.unix_timestamp = (
-                SELECT MAX(unix_timestamp) 
-                FROM LogEntries
+            AND j.created_at = (
+                SELECT MAX(created_at) 
+                FROM Jobs
             )
             ORDER BY j.job_id DESC
         """, (username,))
@@ -377,14 +366,13 @@ def get_user_job_history(username, db_path, limit=100):
                 j.runtime,
                 j.state,
                 j.command,
-                l.timestamp as start_time,
+                j.created_at as start_time,
                 j.end_time
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
-            JOIN LogEntries l ON j.log_id = l.log_id
             WHERE u.username = ?
-            ORDER BY l.unix_timestamp DESC, j.job_id DESC
+            ORDER BY j.created_at DESC, j.job_id DESC
             LIMIT ?
         """, (username, limit))
         

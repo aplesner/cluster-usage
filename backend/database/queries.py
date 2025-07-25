@@ -16,7 +16,7 @@ def get_database_stats(db_path: str):
     
     stats = {}
     
-    # Count of log entries
+    # Count of log entries (for I/O data)
     cursor.execute("SELECT COUNT(*) as count FROM LogEntries")
     stats['log_count'] = cursor.fetchone()['count']
     
@@ -40,11 +40,20 @@ def get_database_stats(db_path: str):
     cursor.execute("SELECT SUM(operation_count) as total FROM IOOperations")
     stats['total_operations'] = cursor.fetchone()['total'] or 0
     
-    # Date range
+    # Count of jobs
+    cursor.execute("SELECT COUNT(*) as count FROM Jobs")
+    stats['job_count'] = cursor.fetchone()['count']
+    
+    # Date range from LogEntries (for I/O data)
     cursor.execute("SELECT MIN(timestamp) as min_date, MAX(timestamp) as max_date FROM LogEntries")
     result = cursor.fetchone()
     stats['min_date'] = result['min_date']
     stats['max_date'] = result['max_date']
+    
+    # Latest job collection timestamp
+    cursor.execute("SELECT MAX(created_at) as latest_job_collection FROM Jobs")
+    result = cursor.fetchone()
+    stats['latest_job_collection'] = result['latest_job_collection']
     
     conn.close()
     return stats
@@ -818,21 +827,21 @@ def get_historic_usage_per_user(db_path: str, username: Union[str, None] = None)
 #     return result
 
 def get_running_jobs_with_timestamp(db_path: str):
-    """Get all running jobs from the latest log entry along with the log timestamp."""
+    """Get all running jobs from the latest collection along with the collection timestamp."""
     conn = get_db_connection(db_path)
     try:
         cursor = conn.cursor()
         
-        # Get the latest log entry timestamp
+        # Get the latest collection timestamp
         cursor.execute("""
-            SELECT timestamp FROM LogEntries 
-            ORDER BY unix_timestamp DESC 
+            SELECT created_at FROM Jobs 
+            ORDER BY created_at DESC 
             LIMIT 1
         """)
         result = cursor.fetchone()
-        log_timestamp = result[0] if result else None
+        collection_timestamp = result[0] if result else None
         
-        # Get running jobs from the latest log entry
+        # Get running jobs from the latest collection
         cursor.execute("""
             SELECT 
                 j.job_id,
@@ -848,10 +857,9 @@ def get_running_jobs_with_timestamp(db_path: str):
             FROM Jobs j
             JOIN Users u ON j.user_id = u.user_id
             JOIN Machines m ON j.machine_id = m.machine_id
-            JOIN LogEntries l ON j.log_id = l.log_id
             WHERE j.state = 'RUNNING'
-            AND l.unix_timestamp = (
-                SELECT MAX(unix_timestamp) FROM LogEntries
+            AND j.created_at = (
+                SELECT MAX(created_at) FROM Jobs
             )
         """)
         
@@ -871,7 +879,7 @@ def get_running_jobs_with_timestamp(db_path: str):
             }
             jobs.append(job)
         
-        return jobs, log_timestamp
+        return jobs, collection_timestamp
         
     except Exception as e:
         print(f"Error getting running jobs from database: {e}")
