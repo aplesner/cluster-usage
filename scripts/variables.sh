@@ -10,6 +10,6 @@ export LOG_FILE_NAME="io_usage.log"
 export SLURM_LOG_FILE="slurm.log"
 export SLURM_LOG_FILE_NAME="slurm.log"
 export REMOTE_SLURM_LOG_DIR="~/bin/slurm-logs"
-export LOCAL_SLURM_LOG_DIR= "data/logs" #"backend/logs/calendar/slurm"
+export LOCAL_SLURM_LOG_DIR= "data" #"backend/logs/calendar/slurm"
 
 export ROOT_DIR="/var/www/cluster-usage-dashboard"

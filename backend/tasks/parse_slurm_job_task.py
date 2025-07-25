@@ -13,6 +13,7 @@ def parse_and_store_slurm_log():
     slurm_log_file = SLURM_DIRECTORY
     if not os.path.exists(slurm_log_file):
         logger.warning(f"Slurm log file not found: {slurm_log_file}")
+        logger.warning(f"Slurm log file not found: {SLURM_DIRECTORY}")
         return {"status": "skipped", "reason": "Slurm log file not found"}
     
     # Extract the collection timestamp from the log file header

@@ -161,7 +161,7 @@ if __name__ == '__main__':
         print("Registered usage_checker task (runs every 4 hours)")
         
         # Register and start the slurm log parsing task
-        scheduler.add_task("slurm_log_parser", parse_and_store_slurm_log, interval_minutes=10)
+        scheduler.add_task("slurm_log_parser", parse_and_store_slurm_log, interval_minutes=1)
         print("Registered slurm_log_parser task (runs every 10 minutes)")
 
         # Register and start the disco thesis scraper task
