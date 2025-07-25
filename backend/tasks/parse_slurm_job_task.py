@@ -21,4 +21,4 @@ def parse_and_store_slurm_log():
         log_content = f.read()
     jobs = parse_slurm_log(log_content)
     result = store_slurm_jobs(jobs, DB_PATH, collection_timestamp)
-    return {"status": "success" if result else "error", "jobs_count": len(jobs), "jobs[:10]": jobs[:10], "collection_timestamp": collection_timestamp} 
+    return {"status": "success" if result else "error", "jobs_count": len(jobs), "jobs[:10]": jobs[:10], "collection_timestamp": collection_timestamp, "filename": slurm_log_file} 
