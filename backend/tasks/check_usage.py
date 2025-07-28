@@ -21,7 +21,6 @@ def user_has_active_reservation(username, gpu_hours):
     if not os.path.exists(log_file):
         return False, GPU_HOURS_THRESHOLD
     total_reserved_gpus = 0
-    found_reservation = False
     with open(log_file, 'r') as f:
         for line in f:
             try:
@@ -37,14 +36,11 @@ def user_has_active_reservation(username, gpu_hours):
             except Exception:
                 continue
     total_reserved_gpus = max(total_reserved_gpus, GPU_HOURS_THRESHOLD)
+    utilization = gpu_hours / total_reserved_gpus
 
-    if found_reservation and total_reserved_gpus > 0:
-        utilization = gpu_hours / total_reserved_gpus
-
-        if utilization > 1.1:
-            return False, total_reserved_gpus
-        return True, total_reserved_gpus
-    return False, total_reserved_gpus
+    if utilization > 1.1:
+        return False, total_reserved_gpus
+    return True, total_reserved_gpus
 
 def check_usage_activity():
     """
