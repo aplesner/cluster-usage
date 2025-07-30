@@ -159,7 +159,7 @@ const CurrentUsage = () => {
                             {(() => {
                                 const now = new Date();
                                 const last = new Date(usageData.timestamp.replace(' ', 'T'));
-                                const diffMs = now - last;
+                                const diffMs = now.getTime() - last.getTime();
                                 const hours = diffMs / 3600000;
                                 return `(${hours.toFixed(1)} hours ago)`;
                             })()}

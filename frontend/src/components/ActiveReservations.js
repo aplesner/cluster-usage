@@ -79,8 +79,12 @@ function ActiveReservations() {
         if (!isoString) return 'N/A';
         const now = new Date();
         const last = new Date(isoString);
-        const diffMs = now - last;
+        
+        // Ensure both dates are in the same timezone context for accurate comparison
+        // The backend sends timezone-aware ISO strings in CET/CEST
+        const diffMs = now.getTime() - last.getTime();
         if (diffMs < 0) return 'just now';
+        
         const minutes = Math.floor(diffMs / 60000);
         const seconds = Math.floor((diffMs % 60000) / 1000);
         return `${minutes}m ${seconds}s ago`;
