@@ -89,7 +89,8 @@ def send_email(user: str, email_type: str = "reservation-not-used", context: str
 
 def check_rate_limit(user: str) -> bool:
     """Check if user has exceeded email rate limit."""
-    now = datetime.now()
+    from backend.utils.timezone_utils import get_current_time_cet
+    now = get_current_time_cet()
     if user in email_rate_limit:
         user_emails = email_rate_limit[user]
         # Remove emails older than 1 hour
@@ -104,7 +105,8 @@ def check_rate_limit(user: str) -> bool:
 
 def update_rate_limit(user: str) -> None:
     """Update rate limit for user after successful email send."""
-    now = datetime.now()
+    from backend.utils.timezone_utils import get_current_time_cet
+    now = get_current_time_cet()
     if user not in email_rate_limit:
         email_rate_limit[user] = []
     email_rate_limit[user].append(now)
@@ -461,7 +463,8 @@ def store_email_notification(user: str, email_type: str, context: str, cc_emails
         """)
         
         # Insert email notification as a task log entry
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        from backend.utils.timezone_utils import format_datetime_cet
+        timestamp = format_datetime_cet(datetime.now())
         task_name = f"email-{email_type}"
         status = "sent"
         message = f"Email notification sent to {user}"

@@ -210,7 +210,8 @@ def get_calendar_last_refresh():
         from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
         log_file = os.path.join(CALENDAR_LOGS_DIR, 'calendar_today.log')
         mtime = os.path.getmtime(log_file)
-        dt = datetime.fromtimestamp(mtime)
+        from backend.utils.timezone_utils import localize_naive_datetime
+        dt = localize_naive_datetime(datetime.fromtimestamp(mtime))
         return jsonify({'last_refresh': dt.isoformat()})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -449,7 +450,8 @@ def get_users_emailed_last_12h():
         db_path = current_app.config['DB_PATH']
         conn = get_db_connection(db_path)
         cursor = conn.cursor()
-        twelve_hours_ago = datetime.now() - timedelta(hours=12)
+        from backend.utils.timezone_utils import get_current_time_cet
+        twelve_hours_ago = get_current_time_cet() - timedelta(hours=12)
         # Query PeriodicTaskLogs for recent email notifications
         cursor.execute("""
             SELECT message FROM PeriodicTaskLogs

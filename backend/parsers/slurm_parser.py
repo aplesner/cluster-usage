@@ -252,7 +252,8 @@ def store_slurm_jobs(jobs: List[SlurmJob], db_path: str, collection_timestamp: O
                 created_at = datetime(2000, 1, 1, 0, 0, 0)
         else:
             # Use current time as before
-            created_at = datetime.now()
+            from backend.utils.timezone_utils import get_current_time_cet
+            created_at = get_current_time_cet()
         
         # Clear all existing jobs before inserting new ones
         cursor.execute("DELETE FROM Jobs")

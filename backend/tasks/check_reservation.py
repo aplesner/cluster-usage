@@ -11,6 +11,7 @@ from ..database.schema import get_db_connection
 from .calendar_tasks import get_active_calendar_events, CALENDAR_LOGS_DIR
 from ..config import DB_PATH, HOST, PORT
 from ..email_notifications import send_email
+from ..utils.timezone_utils import get_current_time_cet, get_datetime_cet_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ def check_reservation_activity():
                 actual_usage=current_user_usage_by_host,
                 is_active=is_active,
                 hosts_used=list(current_user_usage_by_host.keys()),
-                timestamp=datetime.now()
+                timestamp=get_current_time_cet()
             )
             
             reservation_activities.append(activity)
@@ -125,9 +126,10 @@ def check_reservation_activity():
         # Store activities in database
         store_reservation_activity(reservation_activities, DB_PATH)
         
+        from backend.utils.timezone_utils import get_datetime_cet_isoformat
         return {
             "status": "success",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": get_datetime_cet_isoformat(),
             "activities": [
                 {
                     "username": a.username,

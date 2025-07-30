@@ -29,10 +29,11 @@ class TaskScheduler:
         cursor = conn.cursor()
         
         try:
+            from backend.utils.timezone_utils import get_current_time_cet
             cursor.execute('''
                 INSERT INTO PeriodicTaskLogs (timestamp, task_name, status, message, details)
                 VALUES (?, ?, ?, ?, ?)
-            ''', (datetime.now(), task_name, status, message, details))
+            ''', (get_current_time_cet(), task_name, status, message, details))
             conn.commit()
         except Exception as e:
             logger.error(f"Error logging task execution: {e}")

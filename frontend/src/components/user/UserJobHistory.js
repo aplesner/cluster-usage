@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './UserJobHistory.css';
+import formatCETDate from '../common/formatCETDate';
 
 const UserJobHistory = ({ jobs }) => {
     const [filter, setFilter] = useState('all');
@@ -129,8 +130,7 @@ const UserJobHistory = ({ jobs }) => {
 };
 
 const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    return formatCETDate(dateString);
 };
 
 const formatMemory = (bytes) => {

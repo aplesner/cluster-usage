@@ -27,8 +27,8 @@ def is_valid_user(username):
 
 def is_valid_resource(resource_name):
     """Check if the resource name matches allowed patterns."""
-    # Matches artongpu01-10, tikgpu01-10, artongpu1-9, tikgpu1-9, tikgpuX
-    return re.match(r'^(artongpu(0[1-9]|10|[1-9])|tikgpu(0[1-9]|10|[1-9]|X))$', resource_name) is not None
+    # Matches artongpu01-10, tikgpu01-10, tikgpuX
+    return re.match(r'^(artongpu(0[1-9]|10)|tikgpu(0[1-9]|10|X))$', resource_name) is not None
 
 def calculate_duration(start_time, end_time):
     """Calculate the duration between start and end time in days and hours"""
@@ -37,7 +37,8 @@ def calculate_duration(start_time, end_time):
     if isinstance(end_time, str):
         end_time = datetime.fromisoformat(end_time)
     
-    now = datetime.now(pytz.timezone('Europe/Zurich'))
+    from backend.utils.timezone_utils import get_current_time_cet
+    now = get_current_time_cet()
     if end_time < now:
         return "Expired"
         
@@ -225,8 +226,9 @@ def get_active_calendar_events():
                     continue
                 
                 # Create log entry
+                from backend.utils.timezone_utils import get_datetime_cet_isoformat
                 log_entry = {
-                    'timestamp': datetime.now().isoformat(),
+                    'timestamp': get_datetime_cet_isoformat(),
                     'username': parsed_event['username'],
                     'resources': parsed_event['resources'],
                     'comment': parsed_event['comment'],

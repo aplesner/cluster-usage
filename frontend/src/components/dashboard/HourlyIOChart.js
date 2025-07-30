@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
+import formatCETDate from '../common/formatCETDate';
 
 // Import Chart.js components conditionally
 let Line;
@@ -73,15 +74,7 @@ const HourlyIOChart = () => {
 
   // Format timestamp for display
   const formatTimestamp = (timestamp) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatCETDate(timestamp);
   };
 
   // Prepare chart data from time series

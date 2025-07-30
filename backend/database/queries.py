@@ -696,7 +696,8 @@ def get_historic_usage_per_user(db_path: str, username: Union[str, None] = None)
                 m.machine_name,
                 j.gpus,
                 j.runtime,
-                j.end_time
+                j.end_time,
+                j.created_at
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
@@ -710,7 +711,8 @@ def get_historic_usage_per_user(db_path: str, username: Union[str, None] = None)
                 m.machine_name,
                 j.gpus,
                 j.runtime,
-                j.end_time
+                j.end_time,
+                j.created_at
             FROM Jobs j
             JOIN Machines m ON j.machine_id = m.machine_id
             JOIN Users u ON j.user_id = u.user_id
@@ -723,12 +725,17 @@ def get_historic_usage_per_user(db_path: str, username: Union[str, None] = None)
             gpus = row['gpus'] or 0
             runtime = row['runtime'] or ''
             end_time_str = row['end_time'] or ''
+            created_at_str = row['created_at'] or ''
             capped_hours = 0.0
-
-            if ('Unknown' not in end_time_str) and (end_time_str is not ''):
+            if ('Unknown' not in end_time_str) and (end_time_str != ''):
                 try:
                     # Parse end_time and runtime
                     end_time = datetime.fromisoformat(end_time_str)
+                    # Ensure end_time is timezone-aware (assume CET if naive)
+                    if end_time.tzinfo is None:
+                        import pytz
+                        cet_tz = pytz.timezone('Europe/Berlin')
+                        end_time = cet_tz.localize(end_time)
                     # parse_runtime_to_hours returns float hours, but we want timedelta
                     import re
                     match = re.match(r"(?:(\d+)-)?(\d+):(\d+):(\d+)", runtime)
@@ -737,11 +744,26 @@ def get_historic_usage_per_user(db_path: str, username: Union[str, None] = None)
                         duration = timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
                         start_time = end_time - duration
                         from datetime import datetime, timedelta
-                        now = datetime.now()
-
-                        min_start_time = now - timedelta(hours=GPU_MAX_HOURS)
+                        import pytz
+                        cet_tz = pytz.timezone('Europe/Berlin')
+                        
+                        # Use the job's creation time instead of current time
+                        if created_at_str:
+                            try:
+                                created_at = datetime.fromisoformat(created_at_str)
+                                if created_at.tzinfo is None:
+                                    created_at = cet_tz.localize(created_at)
+                            except Exception:
+                                # Fallback to current time if parsing fails
+                                created_at = datetime.now(cet_tz)
+                        else:
+                            # Fallback to current time if no creation time
+                            created_at = datetime.now(cet_tz)
+                        min_start_time = created_at - timedelta(hours=GPU_MAX_HOURS)
                         if start_time < min_start_time:
                             start_time = min_start_time
+
+                        
                         capped_duration = end_time - start_time
                         capped_hours = capped_duration.total_seconds() / 3600.0
                         capped_hours = max(0, capped_hours)

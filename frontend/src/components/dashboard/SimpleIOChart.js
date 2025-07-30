@@ -13,6 +13,7 @@ import {
 import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
+import formatCETDate from '../common/formatCETDate';
 
 // Register Chart.js components - same as in UserDetail.js
 ChartJS.register(
@@ -49,12 +50,7 @@ const SimpleIOChart = () => {
 
   // Format date for chart display - same approach as UserDetail.js
   const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
+    return formatCETDate(dateString, { month: 'short', day: 'numeric' });
   };
 
   // Prepare chart data

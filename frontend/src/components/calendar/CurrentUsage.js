@@ -4,6 +4,7 @@ import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import './CurrentUsage.css';
+import formatCETDate from '../common/formatCETDate';
 
 const CurrentUsage = () => {
     const [usageData, setUsageData] = useState(null);
@@ -151,7 +152,7 @@ const CurrentUsage = () => {
                     <h3>Current Resource Usage</h3>
                     <div className="last-updated">
                         Last updated: {usageData?.timestamp ?
-                            new Date(usageData.timestamp.replace(' ', 'T')).toLocaleString() : 'N/A'}
+                            formatCETDate(usageData.timestamp) : 'N/A'}
                     </div>
                     {usageData?.timestamp && (
                         <div style={{ color: '#888', fontSize: '0.95em', marginTop: '0.2em' }}>

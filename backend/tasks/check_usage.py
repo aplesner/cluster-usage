@@ -1,10 +1,10 @@
-from datetime import datetime
 import logging
-from ..config import DB_PATH
-from ..database.queries import get_all_users, get_historic_usage_per_user, get_user_usage
-from ..email_notifications import send_email
-from ..tasks.calendar_tasks import CALENDAR_LOGS_DIR
 import os
+from backend.database.queries import get_all_users, get_historic_usage_per_user, get_user_usage
+from backend.tasks.calendar_tasks import CALENDAR_LOGS_DIR
+from backend.email_notifications import send_email
+from backend.config import DB_PATH
+from backend.utils.timezone_utils import get_datetime_cet_isoformat
 import json
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def check_usage_activity():
     try:
         users = get_all_users(DB_PATH)
         usage_by_user = get_historic_usage_per_user(DB_PATH)
-        now = datetime.now().isoformat()
+        now = get_datetime_cet_isoformat()
         results = []
         for user in users:
             username = user['username']
